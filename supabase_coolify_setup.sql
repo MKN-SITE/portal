@@ -1356,7 +1356,7 @@ GRANT ALL ON FUNCTION public.delete_admin_user(p_user_id uuid) TO authenticated;
 
 GRANT ALL ON TABLE public.role_permissions TO anon;
 GRANT ALL ON TABLE public.role_permissions TO authenticated;
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE public.role_permissions TO service_role;
+GRANT REFERENCES,TRIGGER,TRUNCATE ON TABLE public.role_permissions TO service_role;
 
 
 --
@@ -1365,7 +1365,7 @@ GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE public.role_permissions TO s
 
 GRANT ALL ON TABLE public.activity_logs TO anon;
 GRANT ALL ON TABLE public.activity_logs TO authenticated;
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE public.activity_logs TO service_role;
+GRANT REFERENCES,TRIGGER,TRUNCATE ON TABLE public.activity_logs TO service_role;
 
 
 --
@@ -1374,7 +1374,7 @@ GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE public.activity_logs TO serv
 
 GRANT ALL ON TABLE public.activity_logs_with_users TO anon;
 GRANT ALL ON TABLE public.activity_logs_with_users TO authenticated;
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE public.activity_logs_with_users TO service_role;
+GRANT REFERENCES,TRIGGER,TRUNCATE ON TABLE public.activity_logs_with_users TO service_role;
 
 
 --
@@ -1383,7 +1383,7 @@ GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE public.activity_logs_with_us
 
 GRANT ALL ON TABLE public.admin_user_profiles TO anon;
 GRANT ALL ON TABLE public.admin_user_profiles TO authenticated;
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE public.admin_user_profiles TO service_role;
+GRANT REFERENCES,TRIGGER,TRUNCATE ON TABLE public.admin_user_profiles TO service_role;
 
 
 --
@@ -1392,7 +1392,7 @@ GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE public.admin_user_profiles T
 
 GRANT ALL ON TABLE public.brand_settings TO anon;
 GRANT ALL ON TABLE public.brand_settings TO authenticated;
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE public.brand_settings TO service_role;
+GRANT REFERENCES,TRIGGER,TRUNCATE ON TABLE public.brand_settings TO service_role;
 
 
 --
@@ -1401,7 +1401,7 @@ GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE public.brand_settings TO ser
 
 GRANT ALL ON TABLE public.categories TO anon;
 GRANT ALL ON TABLE public.categories TO authenticated;
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE public.categories TO service_role;
+GRANT REFERENCES,TRIGGER,TRUNCATE ON TABLE public.categories TO service_role;
 
 
 --
@@ -1410,7 +1410,7 @@ GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE public.categories TO service
 
 GRANT ALL ON TABLE public.daily_visitors TO anon;
 GRANT ALL ON TABLE public.daily_visitors TO authenticated;
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE public.daily_visitors TO service_role;
+GRANT REFERENCES,TRIGGER,TRUNCATE ON TABLE public.daily_visitors TO service_role;
 
 
 --
@@ -1419,7 +1419,7 @@ GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE public.daily_visitors TO ser
 
 GRANT ALL ON TABLE public.hero_sliders TO anon;
 GRANT ALL ON TABLE public.hero_sliders TO authenticated;
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE public.hero_sliders TO service_role;
+GRANT REFERENCES,TRIGGER,TRUNCATE ON TABLE public.hero_sliders TO service_role;
 
 
 --
@@ -1428,7 +1428,7 @@ GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE public.hero_sliders TO servi
 
 GRANT ALL ON TABLE public.portal_clicks TO anon;
 GRANT ALL ON TABLE public.portal_clicks TO authenticated;
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE public.portal_clicks TO service_role;
+GRANT REFERENCES,TRIGGER,TRUNCATE ON TABLE public.portal_clicks TO service_role;
 
 
 --
@@ -1437,7 +1437,7 @@ GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE public.portal_clicks TO serv
 
 GRANT ALL ON TABLE public.portal_items TO anon;
 GRANT ALL ON TABLE public.portal_items TO authenticated;
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE public.portal_items TO service_role;
+GRANT REFERENCES,TRIGGER,TRUNCATE ON TABLE public.portal_items TO service_role;
 
 
 --
@@ -1446,7 +1446,7 @@ GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE public.portal_items TO servi
 
 GRANT ALL ON TABLE public.site_settings TO anon;
 GRANT ALL ON TABLE public.site_settings TO authenticated;
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE public.site_settings TO service_role;
+GRANT REFERENCES,TRIGGER,TRUNCATE ON TABLE public.site_settings TO service_role;
 
 
 --
@@ -1455,7 +1455,7 @@ GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE public.site_settings TO serv
 
 GRANT ALL ON TABLE public.user_roles TO anon;
 GRANT ALL ON TABLE public.user_roles TO authenticated;
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE public.user_roles TO service_role;
+GRANT REFERENCES,TRIGGER,TRUNCATE ON TABLE public.user_roles TO service_role;
 
 
 --
@@ -1500,9 +1500,9 @@ ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public GRANT ALL ON F
 --
 
 ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON TABLES TO postgres;
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLES TO anon;
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLES TO authenticated;
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLES TO service_role;
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT REFERENCES,TRIGGER,TRUNCATE ON TABLES TO anon;
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT REFERENCES,TRIGGER,TRUNCATE ON TABLES TO authenticated;
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT REFERENCES,TRIGGER,TRUNCATE ON TABLES TO service_role;
 
 
 --
