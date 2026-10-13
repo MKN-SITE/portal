@@ -6,17 +6,6 @@
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.6
 
-SET statement_timeout = 0;
-SET lock_timeout = 0;
-SET idle_in_transaction_session_timeout = 0;
-SET transaction_timeout = 0;
-SET client_encoding = 'UTF8';
-SET standard_conforming_strings = on;
-SELECT pg_catalog.set_config('search_path', '', false);
-SET check_function_bodies = false;
-SET xmloption = content;
-SET client_min_messages = warning;
-SET row_security = off;
 
 DROP POLICY IF EXISTS "Users can read own role" ON public.user_roles;
 DROP POLICY IF EXISTS "Public can update portal_clicks" ON public.portal_clicks;
@@ -96,21 +85,17 @@ DROP FUNCTION IF EXISTS public.create_or_assign_admin(p_email text, p_password t
 DROP FUNCTION IF EXISTS public.assign_user_role(p_email text, p_role text);
 DROP FUNCTION IF EXISTS public.assign_role_by_email(p_email text, p_role text);
 DROP FUNCTION IF EXISTS public.admin_update_password(p_email text, p_password text);
-DROP SCHEMA IF EXISTS public;
 --
 -- Name: public; Type: SCHEMA; Schema: -; Owner: pg_database_owner
 --
 
-CREATE SCHEMA public;
 
 
-ALTER SCHEMA public OWNER TO pg_database_owner;
 
 --
 -- Name: SCHEMA public; Type: COMMENT; Schema: -; Owner: pg_database_owner
 --
 
-COMMENT ON SCHEMA public IS 'standard public schema';
 
 
 --
@@ -309,9 +294,7 @@ $$;
 
 ALTER FUNCTION public.get_admin_users() OWNER TO postgres;
 
-SET default_tablespace = '';
 
-SET default_table_access_method = heap;
 
 --
 -- Name: role_permissions; Type: TABLE; Schema: public; Owner: postgres
