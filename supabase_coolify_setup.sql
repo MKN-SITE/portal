@@ -2,7 +2,6 @@
 -- PostgreSQL database dump
 --
 
-\restrict vad75tQigzkQsoebGmbCHRYHBuc4Qz2EG0XDPbgikpihF1x2czKKRwaAtEUQdX0
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.6
@@ -722,138 +721,120 @@ ALTER TABLE public.user_roles OWNER TO postgres;
 -- Data for Name: activity_logs; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.activity_logs (id, user_id, action, target, details, type, created_at) FROM stdin;
-c50d6afe-1f28-4922-ac99-e9f6aaa3d815	00000000-0000-0000-0000-000000000000	membuat	Portal CCTV MKN	\N	success	2026-08-21 01:50:21.79752+00
-016b94ab-8d38-4e94-9bd8-5d205cd7f7ac	00000000-0000-0000-0000-000000000000	membuat	Portal Summary Report MKN	\N	success	2026-08-21 01:50:45.677509+00
-270c8dd3-a0b9-4772-9d04-90e0714479b7	00000000-0000-0000-0000-000000000000	membuat	Portal MSD Refresh 	\N	success	2026-08-21 01:51:05.913491+00
-db53e468-a45e-4999-a1f1-d944d97104f0	00000000-0000-0000-0000-000000000000	membuat	Portal HSES KPC	\N	success	2026-08-21 01:51:24.029861+00
-554b0f4a-308d-43a8-9130-90fe95080794	00000000-0000-0000-0000-000000000000	membuat	Portal MKN ERP Approval Worksheet	\N	success	2026-08-21 01:51:42.799414+00
-10f45bf6-abbb-4ded-a38b-e9e045dbd9cd	00000000-0000-0000-0000-000000000000	membuat	Portal ERP MKN	\N	success	2026-08-21 01:51:57.691404+00
-66fa445c-e1f0-4250-8d76-a17b7d255814	00000000-0000-0000-0000-000000000000	membuat	Portal MKN SMART	\N	success	2026-08-21 01:52:15.038416+00
-d8a073d3-1cac-4a93-afed-685370d03c13	00000000-0000-0000-0000-000000000000	membuat	Portal PM Dashboard	\N	success	2026-08-21 01:52:39.201394+00
-ce9cfc9b-90b5-4927-99a1-ba1c375b95b4	00000000-0000-0000-0000-000000000000	membuat	Portal Zum Iot	\N	success	2026-08-21 01:53:00.996763+00
-b6b904bf-3e53-4b3b-9ae6-bcc67c8dbc8a	00000000-0000-0000-0000-000000000000	memperbarui	Portal PM Dashboard	\N	info	2026-08-24 01:09:46.39497+00
-65682920-7d08-4192-bcd0-036b8fe632a0	00000000-0000-0000-0000-000000000000	memperbarui	Portal Zum Iot	\N	info	2026-10-13 01:46:47.84393+00
-76951aa3-9bd9-4a06-8246-94b7159194ee	00000000-0000-0000-0000-000000000000	memperbarui	Portal MKN SMART	\N	info	2026-10-13 01:47:14.432078+00
-8fe3b91f-205a-4fac-a497-7615413fe29a	00000000-0000-0000-0000-000000000000	memperbarui	Portal ERP MKN	\N	info	2026-10-13 01:47:26.335456+00
-31967324-f015-4cdf-9e3d-a1dad9faeaf2	00000000-0000-0000-0000-000000000000	memperbarui	Portal MKN ERP Approval Worksheet	\N	info	2026-10-13 01:47:34.91846+00
-\.
+INSERT INTO public.activity_logs VALUES ('c50d6afe-1f28-4922-ac99-e9f6aaa3d815', '00000000-0000-0000-0000-000000000000', 'membuat', 'Portal CCTV MKN', NULL, 'success', '2026-08-21 01:50:21.79752+00');
+INSERT INTO public.activity_logs VALUES ('016b94ab-8d38-4e94-9bd8-5d205cd7f7ac', '00000000-0000-0000-0000-000000000000', 'membuat', 'Portal Summary Report MKN', NULL, 'success', '2026-08-21 01:50:45.677509+00');
+INSERT INTO public.activity_logs VALUES ('270c8dd3-a0b9-4772-9d04-90e0714479b7', '00000000-0000-0000-0000-000000000000', 'membuat', 'Portal MSD Refresh ', NULL, 'success', '2026-08-21 01:51:05.913491+00');
+INSERT INTO public.activity_logs VALUES ('db53e468-a45e-4999-a1f1-d944d97104f0', '00000000-0000-0000-0000-000000000000', 'membuat', 'Portal HSES KPC', NULL, 'success', '2026-08-21 01:51:24.029861+00');
+INSERT INTO public.activity_logs VALUES ('554b0f4a-308d-43a8-9130-90fe95080794', '00000000-0000-0000-0000-000000000000', 'membuat', 'Portal MKN ERP Approval Worksheet', NULL, 'success', '2026-08-21 01:51:42.799414+00');
+INSERT INTO public.activity_logs VALUES ('10f45bf6-abbb-4ded-a38b-e9e045dbd9cd', '00000000-0000-0000-0000-000000000000', 'membuat', 'Portal ERP MKN', NULL, 'success', '2026-08-21 01:51:57.691404+00');
+INSERT INTO public.activity_logs VALUES ('66fa445c-e1f0-4250-8d76-a17b7d255814', '00000000-0000-0000-0000-000000000000', 'membuat', 'Portal MKN SMART', NULL, 'success', '2026-08-21 01:52:15.038416+00');
+INSERT INTO public.activity_logs VALUES ('d8a073d3-1cac-4a93-afed-685370d03c13', '00000000-0000-0000-0000-000000000000', 'membuat', 'Portal PM Dashboard', NULL, 'success', '2026-08-21 01:52:39.201394+00');
+INSERT INTO public.activity_logs VALUES ('ce9cfc9b-90b5-4927-99a1-ba1c375b95b4', '00000000-0000-0000-0000-000000000000', 'membuat', 'Portal Zum Iot', NULL, 'success', '2026-08-21 01:53:00.996763+00');
+INSERT INTO public.activity_logs VALUES ('b6b904bf-3e53-4b3b-9ae6-bcc67c8dbc8a', '00000000-0000-0000-0000-000000000000', 'memperbarui', 'Portal PM Dashboard', NULL, 'info', '2026-08-24 01:09:46.39497+00');
+INSERT INTO public.activity_logs VALUES ('65682920-7d08-4192-bcd0-036b8fe632a0', '00000000-0000-0000-0000-000000000000', 'memperbarui', 'Portal Zum Iot', NULL, 'info', '2026-10-13 01:46:47.84393+00');
+INSERT INTO public.activity_logs VALUES ('76951aa3-9bd9-4a06-8246-94b7159194ee', '00000000-0000-0000-0000-000000000000', 'memperbarui', 'Portal MKN SMART', NULL, 'info', '2026-10-13 01:47:14.432078+00');
+INSERT INTO public.activity_logs VALUES ('8fe3b91f-205a-4fac-a497-7615413fe29a', '00000000-0000-0000-0000-000000000000', 'memperbarui', 'Portal ERP MKN', NULL, 'info', '2026-10-13 01:47:26.335456+00');
+INSERT INTO public.activity_logs VALUES ('31967324-f015-4cdf-9e3d-a1dad9faeaf2', '00000000-0000-0000-0000-000000000000', 'memperbarui', 'Portal MKN ERP Approval Worksheet', NULL, 'info', '2026-10-13 01:47:34.91846+00');
 
 
 --
 -- Data for Name: brand_settings; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.brand_settings (id, company_name, portal_name, company_website, contact_phone, company_address, contact_email, facebook_url, twitter_url, linkedin_url, instagram_url, stats_visitors, stats_bg_image, updated_at) FROM stdin;
-1	PT. Solusi Maju Bersama	Solusi Maju	www.solusimaju.com	+62 812-3456-7890	Jakarta	info@solusimaju.com	\N	\N	\N	\N	65200	\N	2026-08-21 01:32:03.542344+00
-\.
+INSERT INTO public.brand_settings VALUES (1, 'PT. Solusi Maju Bersama', 'Solusi Maju', 'www.solusimaju.com', '+62 812-3456-7890', 'Jakarta', 'info@solusimaju.com', NULL, NULL, NULL, NULL, 65200, NULL, '2026-08-21 01:32:03.542344+00');
 
 
 --
 -- Data for Name: categories; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.categories (id, name, icon, is_active, display_order, created_at, updated_at) FROM stdin;
-14afefa4-f69b-4404-8ec2-e542551e481b	Operasional	Gear	t	0	2026-08-21 01:32:03.672735+00	2026-08-21 01:32:03.672735+00
-d0176926-1a39-4298-8b56-2624593546a5	Keamanan	ShieldCheck	t	0	2026-08-21 01:32:03.672735+00	2026-08-21 01:32:03.672735+00
-6b050d71-9f0a-4f97-9b76-74c926fcbaf3	Dokumen	FileText	t	0	2026-08-21 01:32:03.672735+00	2026-08-21 01:32:03.672735+00
-515ec8cc-7b89-44a7-946d-3cf0cbea15c4	GPS	CarProfile	t	1	2026-08-21 01:49:21.786958+00	2026-08-21 01:49:21.786958+00
-b9c8d123-8366-4d73-913f-b338c8331e9c	Pelatihan	BookOpen	t	2	2026-08-21 01:49:45.874963+00	2026-08-21 01:49:45.874963+00
-5aedcc37-619c-4d28-9a89-78babbd56044	Manajemen	Briefcase	t	3	2026-08-21 01:49:55.689993+00	2026-08-21 01:49:55.689993+00
-\.
+INSERT INTO public.categories VALUES ('14afefa4-f69b-4404-8ec2-e542551e481b', 'Operasional', 'Gear', true, 0, '2026-08-21 01:32:03.672735+00', '2026-08-21 01:32:03.672735+00');
+INSERT INTO public.categories VALUES ('d0176926-1a39-4298-8b56-2624593546a5', 'Keamanan', 'ShieldCheck', true, 0, '2026-08-21 01:32:03.672735+00', '2026-08-21 01:32:03.672735+00');
+INSERT INTO public.categories VALUES ('6b050d71-9f0a-4f97-9b76-74c926fcbaf3', 'Dokumen', 'FileText', true, 0, '2026-08-21 01:32:03.672735+00', '2026-08-21 01:32:03.672735+00');
+INSERT INTO public.categories VALUES ('515ec8cc-7b89-44a7-946d-3cf0cbea15c4', 'GPS', 'CarProfile', true, 1, '2026-08-21 01:49:21.786958+00', '2026-08-21 01:49:21.786958+00');
+INSERT INTO public.categories VALUES ('b9c8d123-8366-4d73-913f-b338c8331e9c', 'Pelatihan', 'BookOpen', true, 2, '2026-08-21 01:49:45.874963+00', '2026-08-21 01:49:45.874963+00');
+INSERT INTO public.categories VALUES ('5aedcc37-619c-4d28-9a89-78babbd56044', 'Manajemen', 'Briefcase', true, 3, '2026-08-21 01:49:55.689993+00', '2026-08-21 01:49:55.689993+00');
 
 
 --
 -- Data for Name: daily_visitors; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.daily_visitors (date, count) FROM stdin;
-\.
 
 
 --
 -- Data for Name: hero_sliders; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.hero_sliders (id, image_url, display_order, created_at) FROM stdin;
-bc16e529-e4a0-49ce-affe-8a87a3de60cc	http://127.0.0.1:54331/storage/v1/object/public/portal_assets/sliders/slider_1787279432365_0.15219148470205202.jpeg	0	2026-08-24 02:01:14.920783+00
-fa3405db-e1ba-49cf-9846-47282331dd27	http://127.0.0.1:54331/storage/v1/object/public/portal_assets/sliders/slider_1787536865866_0.5613519345027485.png	1	2026-08-24 02:01:14.920783+00
-e6bc228f-78b6-45e9-8fce-848064535d0d	http://127.0.0.1:54331/storage/v1/object/public/portal_assets/sliders/slider_1787536865959_0.772979926839637.png	2	2026-08-24 02:01:14.920783+00
-2b7d1e8e-5956-4d14-ab6c-761e61bc68e1	http://127.0.0.1:54331/storage/v1/object/public/portal_assets/sliders/slider_1787536873345_0.3214559650290064.jpeg	3	2026-08-24 02:01:14.920783+00
-3ca86dae-ef08-44bb-8cd1-90c85c27a54a	http://127.0.0.1:54331/storage/v1/object/public/portal_assets/sliders/slider_1787536873409_0.9034206386906943.jpeg	4	2026-08-24 02:01:14.920783+00
-d45d0cbb-afa2-46d7-aa3d-659d9c7a40e3	http://127.0.0.1:54331/storage/v1/object/public/portal_assets/sliders/slider_1787536873452_0.6898071701735184.jpeg	5	2026-08-24 02:01:14.920783+00
-ef05814d-0af0-4cf8-979d-04e252a3e602	http://127.0.0.1:54331/storage/v1/object/public/portal_assets/sliders/slider_1787536873492_0.3220528509266848.jpeg	6	2026-08-24 02:01:14.920783+00
-cc349869-4ab3-44a7-a4e2-aa800579cc44	http://127.0.0.1:54331/storage/v1/object/public/portal_assets/sliders/slider_1787536873525_0.2973995747557677.jpeg	7	2026-08-24 02:01:14.920783+00
-23a580c9-9ded-4c65-90a6-e58d20f13b4c	http://127.0.0.1:54331/storage/v1/object/public/portal_assets/sliders/slider_1787536873556_0.8536441618442416.jpeg	8	2026-08-24 02:01:14.920783+00
-d1d9de87-5bdc-48e6-acaa-03281b913c06	http://127.0.0.1:54331/storage/v1/object/public/portal_assets/sliders/slider_1787536873588_0.06877720071929061.jpeg	9	2026-08-24 02:01:14.920783+00
-0222e0ce-129c-478c-b4d8-61b0b3d6a3c1	http://127.0.0.1:54331/storage/v1/object/public/portal_assets/sliders/slider_1787536873621_0.45624473695861023.jpeg	10	2026-08-24 02:01:14.920783+00
-61b62af0-f756-4424-ac55-8b648d68959c	http://127.0.0.1:54331/storage/v1/object/public/portal_assets/sliders/slider_1787536873656_0.3326398058080633.jpeg	11	2026-08-24 02:01:14.920783+00
-c65fb3a6-d861-4fb9-80bb-520069957394	http://127.0.0.1:54331/storage/v1/object/public/portal_assets/sliders/slider_1787536873684_0.12279497084842173.jpeg	12	2026-08-24 02:01:14.920783+00
-\.
+INSERT INTO public.hero_sliders VALUES ('bc16e529-e4a0-49ce-affe-8a87a3de60cc', 'http://127.0.0.1:54331/storage/v1/object/public/portal_assets/sliders/slider_1787279432365_0.15219148470205202.jpeg', 0, '2026-08-24 02:01:14.920783+00');
+INSERT INTO public.hero_sliders VALUES ('fa3405db-e1ba-49cf-9846-47282331dd27', 'http://127.0.0.1:54331/storage/v1/object/public/portal_assets/sliders/slider_1787536865866_0.5613519345027485.png', 1, '2026-08-24 02:01:14.920783+00');
+INSERT INTO public.hero_sliders VALUES ('e6bc228f-78b6-45e9-8fce-848064535d0d', 'http://127.0.0.1:54331/storage/v1/object/public/portal_assets/sliders/slider_1787536865959_0.772979926839637.png', 2, '2026-08-24 02:01:14.920783+00');
+INSERT INTO public.hero_sliders VALUES ('2b7d1e8e-5956-4d14-ab6c-761e61bc68e1', 'http://127.0.0.1:54331/storage/v1/object/public/portal_assets/sliders/slider_1787536873345_0.3214559650290064.jpeg', 3, '2026-08-24 02:01:14.920783+00');
+INSERT INTO public.hero_sliders VALUES ('3ca86dae-ef08-44bb-8cd1-90c85c27a54a', 'http://127.0.0.1:54331/storage/v1/object/public/portal_assets/sliders/slider_1787536873409_0.9034206386906943.jpeg', 4, '2026-08-24 02:01:14.920783+00');
+INSERT INTO public.hero_sliders VALUES ('d45d0cbb-afa2-46d7-aa3d-659d9c7a40e3', 'http://127.0.0.1:54331/storage/v1/object/public/portal_assets/sliders/slider_1787536873452_0.6898071701735184.jpeg', 5, '2026-08-24 02:01:14.920783+00');
+INSERT INTO public.hero_sliders VALUES ('ef05814d-0af0-4cf8-979d-04e252a3e602', 'http://127.0.0.1:54331/storage/v1/object/public/portal_assets/sliders/slider_1787536873492_0.3220528509266848.jpeg', 6, '2026-08-24 02:01:14.920783+00');
+INSERT INTO public.hero_sliders VALUES ('cc349869-4ab3-44a7-a4e2-aa800579cc44', 'http://127.0.0.1:54331/storage/v1/object/public/portal_assets/sliders/slider_1787536873525_0.2973995747557677.jpeg', 7, '2026-08-24 02:01:14.920783+00');
+INSERT INTO public.hero_sliders VALUES ('23a580c9-9ded-4c65-90a6-e58d20f13b4c', 'http://127.0.0.1:54331/storage/v1/object/public/portal_assets/sliders/slider_1787536873556_0.8536441618442416.jpeg', 8, '2026-08-24 02:01:14.920783+00');
+INSERT INTO public.hero_sliders VALUES ('d1d9de87-5bdc-48e6-acaa-03281b913c06', 'http://127.0.0.1:54331/storage/v1/object/public/portal_assets/sliders/slider_1787536873588_0.06877720071929061.jpeg', 9, '2026-08-24 02:01:14.920783+00');
+INSERT INTO public.hero_sliders VALUES ('0222e0ce-129c-478c-b4d8-61b0b3d6a3c1', 'http://127.0.0.1:54331/storage/v1/object/public/portal_assets/sliders/slider_1787536873621_0.45624473695861023.jpeg', 10, '2026-08-24 02:01:14.920783+00');
+INSERT INTO public.hero_sliders VALUES ('61b62af0-f756-4424-ac55-8b648d68959c', 'http://127.0.0.1:54331/storage/v1/object/public/portal_assets/sliders/slider_1787536873656_0.3326398058080633.jpeg', 11, '2026-08-24 02:01:14.920783+00');
+INSERT INTO public.hero_sliders VALUES ('c65fb3a6-d861-4fb9-80bb-520069957394', 'http://127.0.0.1:54331/storage/v1/object/public/portal_assets/sliders/slider_1787536873684_0.12279497084842173.jpeg', 12, '2026-08-24 02:01:14.920783+00');
 
 
 --
 -- Data for Name: portal_clicks; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.portal_clicks (portal_id, date, clicks) FROM stdin;
-c39dab29-452a-4a60-86d2-d7bcedf021fd	2026-08-24	1
-86a41954-2fe1-48df-910b-373ec6deb235	2026-10-13	1
-8531a5a3-ac97-485c-bc9b-7e1bc6437bc6	2026-10-13	1
-\.
+INSERT INTO public.portal_clicks VALUES ('c39dab29-452a-4a60-86d2-d7bcedf021fd', '2026-08-24', 1);
+INSERT INTO public.portal_clicks VALUES ('86a41954-2fe1-48df-910b-373ec6deb235', '2026-10-13', 1);
+INSERT INTO public.portal_clicks VALUES ('8531a5a3-ac97-485c-bc9b-7e1bc6437bc6', '2026-10-13', 1);
 
 
 --
 -- Data for Name: portal_items; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.portal_items (id, title, category, url, preview_gif, thumbnail, description, tags, client_or_type, year, custom_image, created_at, updated_at, sort_order) FROM stdin;
-ec69ef6b-8c8a-4796-acdd-32b7a7318afe	MSD Refresh 	Manajemen	https://atdportal.netlify.app/	\N	\N	MSD Refresh Kimper 	\N	Client	\N	http://127.0.0.1:54331/storage/v1/object/public/portal_assets/portals/customIcon_0.6963808394216067.png	2026-08-21 01:51:05.901309+00	2026-08-21 01:51:05.901309+00	7
-8531a5a3-ac97-485c-bc9b-7e1bc6437bc6	Summary Report MKN	Operasional	https://multikontrolnusantara.sharepoint.com/:x:/s/MKNSangatta/IQAuV4N0j6uURazdTO4AylRCAaslrrUWsCylN71-LGFIBSs?e=zidlLT	\N	\N	Summary Report MKN Sharepoint	\N	Client	\N	http://127.0.0.1:54331/storage/v1/object/public/portal_assets/portals/customIcon_0.3732457206803652.png	2026-08-21 01:50:45.668193+00	2026-08-21 01:50:45.668193+00	4
-437880fe-3478-466d-b62e-a10efcc58e73	CCTV MKN	Keamanan	http://10.80.16.29/	\N	\N	CCTV Internal MKN	\N	Client	\N	http://127.0.0.1:54331/storage/v1/object/public/portal_assets/portals/customIcon_0.3023037463927831.png	2026-08-21 01:50:21.780067+00	2026-08-21 01:50:21.780067+00	6
-8f051b7b-5d00-4e79-8eec-7ae6da841349	HSES KPC	Pelatihan	https://kpc-hsesclass.azurewebsites.net/	\N	\N	HSES KPC Daftar Training	\N	Client	\N	http://127.0.0.1:54331/storage/v1/object/public/portal_assets/portals/customIcon_0.36475183840563274.png	2026-08-21 01:51:24.020147+00	2026-08-21 01:51:24.020147+00	8
-c39dab29-452a-4a60-86d2-d7bcedf021fd	PM Dashboard	Operasional	https://pm.mknops.web.id/	\N	\N	PM Dashboard	\N	Client	\N	http://127.0.0.1:54331/storage/v1/object/public/portal_assets/portals/customIcon_0.9144227650151567.png	2026-08-21 01:52:39.19016+00	2026-08-21 01:52:39.19016+00	0
-a3641baf-f69d-47ae-a6a2-5da9eaeb1e89	Zum Iot	GPS	https://gps.zumiot.id/Live	\N	\N	GPS LV MKN Site	\N	Client	\N	http://127.0.0.1:54331/storage/v1/object/public/portal_assets/portals/customIcon_0.7372980126646415.png	2026-08-21 01:53:00.986854+00	2026-08-21 01:53:00.986854+00	5
-05404fb9-289f-4df1-959a-cd036b275a61	MKN SMART	Operasional	https://mknsmart.my.id	\N	\N	MKN SMART	\N	Client	\N	http://127.0.0.1:54331/storage/v1/object/public/portal_assets/portals/customIcon_0.25310790842436015.png	2026-08-21 01:52:15.026821+00	2026-08-21 01:52:15.026821+00	1
-86a41954-2fe1-48df-910b-373ec6deb235	ERP MKN	Operasional	https://erp-mkn.starbit.id	\N	\N	Halaman ERP MKN	\N	Client	\N	http://127.0.0.1:54331/storage/v1/object/public/portal_assets/portals/customIcon_0.5235042312196846.png	2026-08-21 01:51:57.680089+00	2026-08-21 01:51:57.680089+00	2
-24712a0a-3206-487e-b990-c6df65af0725	MKN ERP Approval Worksheet	Operasional	https://mkn-erp.my.id/	\N	\N	MKN ERP Approval Worksheet	\N	Client	\N	http://127.0.0.1:54331/storage/v1/object/public/portal_assets/portals/customIcon_0.29141620091521003.png	2026-08-21 01:51:42.783892+00	2026-08-21 01:51:42.783892+00	3
-\.
+INSERT INTO public.portal_items VALUES ('ec69ef6b-8c8a-4796-acdd-32b7a7318afe', 'MSD Refresh ', 'Manajemen', 'https://atdportal.netlify.app/', NULL, NULL, 'MSD Refresh Kimper ', NULL, 'Client', NULL, 'http://127.0.0.1:54331/storage/v1/object/public/portal_assets/portals/customIcon_0.6963808394216067.png', '2026-08-21 01:51:05.901309+00', '2026-08-21 01:51:05.901309+00', 7);
+INSERT INTO public.portal_items VALUES ('8531a5a3-ac97-485c-bc9b-7e1bc6437bc6', 'Summary Report MKN', 'Operasional', 'https://multikontrolnusantara.sharepoint.com/:x:/s/MKNSangatta/IQAuV4N0j6uURazdTO4AylRCAaslrrUWsCylN71-LGFIBSs?e=zidlLT', NULL, NULL, 'Summary Report MKN Sharepoint', NULL, 'Client', NULL, 'http://127.0.0.1:54331/storage/v1/object/public/portal_assets/portals/customIcon_0.3732457206803652.png', '2026-08-21 01:50:45.668193+00', '2026-08-21 01:50:45.668193+00', 4);
+INSERT INTO public.portal_items VALUES ('437880fe-3478-466d-b62e-a10efcc58e73', 'CCTV MKN', 'Keamanan', 'http://10.80.16.29/', NULL, NULL, 'CCTV Internal MKN', NULL, 'Client', NULL, 'http://127.0.0.1:54331/storage/v1/object/public/portal_assets/portals/customIcon_0.3023037463927831.png', '2026-08-21 01:50:21.780067+00', '2026-08-21 01:50:21.780067+00', 6);
+INSERT INTO public.portal_items VALUES ('8f051b7b-5d00-4e79-8eec-7ae6da841349', 'HSES KPC', 'Pelatihan', 'https://kpc-hsesclass.azurewebsites.net/', NULL, NULL, 'HSES KPC Daftar Training', NULL, 'Client', NULL, 'http://127.0.0.1:54331/storage/v1/object/public/portal_assets/portals/customIcon_0.36475183840563274.png', '2026-08-21 01:51:24.020147+00', '2026-08-21 01:51:24.020147+00', 8);
+INSERT INTO public.portal_items VALUES ('c39dab29-452a-4a60-86d2-d7bcedf021fd', 'PM Dashboard', 'Operasional', 'https://pm.mknops.web.id/', NULL, NULL, 'PM Dashboard', NULL, 'Client', NULL, 'http://127.0.0.1:54331/storage/v1/object/public/portal_assets/portals/customIcon_0.9144227650151567.png', '2026-08-21 01:52:39.19016+00', '2026-08-21 01:52:39.19016+00', 0);
+INSERT INTO public.portal_items VALUES ('a3641baf-f69d-47ae-a6a2-5da9eaeb1e89', 'Zum Iot', 'GPS', 'https://gps.zumiot.id/Live', NULL, NULL, 'GPS LV MKN Site', NULL, 'Client', NULL, 'http://127.0.0.1:54331/storage/v1/object/public/portal_assets/portals/customIcon_0.7372980126646415.png', '2026-08-21 01:53:00.986854+00', '2026-08-21 01:53:00.986854+00', 5);
+INSERT INTO public.portal_items VALUES ('05404fb9-289f-4df1-959a-cd036b275a61', 'MKN SMART', 'Operasional', 'https://mknsmart.my.id', NULL, NULL, 'MKN SMART', NULL, 'Client', NULL, 'http://127.0.0.1:54331/storage/v1/object/public/portal_assets/portals/customIcon_0.25310790842436015.png', '2026-08-21 01:52:15.026821+00', '2026-08-21 01:52:15.026821+00', 1);
+INSERT INTO public.portal_items VALUES ('86a41954-2fe1-48df-910b-373ec6deb235', 'ERP MKN', 'Operasional', 'https://erp-mkn.starbit.id', NULL, NULL, 'Halaman ERP MKN', NULL, 'Client', NULL, 'http://127.0.0.1:54331/storage/v1/object/public/portal_assets/portals/customIcon_0.5235042312196846.png', '2026-08-21 01:51:57.680089+00', '2026-08-21 01:51:57.680089+00', 2);
+INSERT INTO public.portal_items VALUES ('24712a0a-3206-487e-b990-c6df65af0725', 'MKN ERP Approval Worksheet', 'Operasional', 'https://mkn-erp.my.id/', NULL, NULL, 'MKN ERP Approval Worksheet', NULL, 'Client', NULL, 'http://127.0.0.1:54331/storage/v1/object/public/portal_assets/portals/customIcon_0.29141620091521003.png', '2026-08-21 01:51:42.783892+00', '2026-08-21 01:51:42.783892+00', 3);
 
 
 --
 -- Data for Name: role_permissions; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.role_permissions (id, role, page, can_view, can_create, can_update, can_delete, created_at, updated_at) FROM stdin;
-4a65b270-dccb-4532-9bdb-73e60f750875	editor	dashboard	t	f	f	f	2026-08-21 01:32:03.990839+00	2026-08-21 01:53:19.542005+00
-44a23ffa-11ce-4ca5-a34e-2f8fd33dfb70	editor	portals	t	t	t	f	2026-08-21 01:32:03.990839+00	2026-08-21 01:53:19.553657+00
-d9d4dc14-a051-491e-9de9-ef91f55c149b	editor	categories	t	t	t	f	2026-08-21 01:32:03.990839+00	2026-08-21 01:53:19.563667+00
-74df10d1-8781-46ee-9c40-629c75fcd316	editor	appearance	t	f	t	f	2026-08-21 01:32:03.990839+00	2026-08-21 01:53:19.571137+00
-6c33ad3c-1dd3-46f9-82ba-b81ce7351faf	editor	sliders	t	f	t	f	2026-08-21 01:32:03.990839+00	2026-08-21 01:53:19.579418+00
-5bb8ab1c-5b89-4c6e-ac59-171c9bf05b4c	editor	users	f	f	f	f	2026-08-21 01:32:03.990839+00	2026-08-21 01:53:19.586809+00
-96654f8e-8cc2-424b-a047-b478328e594f	editor	permissions	f	f	f	f	2026-08-21 01:53:19.594746+00	2026-08-21 01:53:19.594746+00
-280d1c7e-f9fc-4d07-af47-591997f9c148	editor	activity	t	f	f	f	2026-08-21 01:32:03.990839+00	2026-08-21 01:53:19.601382+00
-567e3b72-b765-4402-b51a-ca7ac9c2f613	editor	profile	t	f	t	f	2026-08-21 01:32:03.990839+00	2026-08-21 01:53:19.607564+00
-\.
+INSERT INTO public.role_permissions VALUES ('4a65b270-dccb-4532-9bdb-73e60f750875', 'editor', 'dashboard', true, false, false, false, '2026-08-21 01:32:03.990839+00', '2026-08-21 01:53:19.542005+00');
+INSERT INTO public.role_permissions VALUES ('44a23ffa-11ce-4ca5-a34e-2f8fd33dfb70', 'editor', 'portals', true, true, true, false, '2026-08-21 01:32:03.990839+00', '2026-08-21 01:53:19.553657+00');
+INSERT INTO public.role_permissions VALUES ('d9d4dc14-a051-491e-9de9-ef91f55c149b', 'editor', 'categories', true, true, true, false, '2026-08-21 01:32:03.990839+00', '2026-08-21 01:53:19.563667+00');
+INSERT INTO public.role_permissions VALUES ('74df10d1-8781-46ee-9c40-629c75fcd316', 'editor', 'appearance', true, false, true, false, '2026-08-21 01:32:03.990839+00', '2026-08-21 01:53:19.571137+00');
+INSERT INTO public.role_permissions VALUES ('6c33ad3c-1dd3-46f9-82ba-b81ce7351faf', 'editor', 'sliders', true, false, true, false, '2026-08-21 01:32:03.990839+00', '2026-08-21 01:53:19.579418+00');
+INSERT INTO public.role_permissions VALUES ('5bb8ab1c-5b89-4c6e-ac59-171c9bf05b4c', 'editor', 'users', false, false, false, false, '2026-08-21 01:32:03.990839+00', '2026-08-21 01:53:19.586809+00');
+INSERT INTO public.role_permissions VALUES ('96654f8e-8cc2-424b-a047-b478328e594f', 'editor', 'permissions', false, false, false, false, '2026-08-21 01:53:19.594746+00', '2026-08-21 01:53:19.594746+00');
+INSERT INTO public.role_permissions VALUES ('280d1c7e-f9fc-4d07-af47-591997f9c148', 'editor', 'activity', true, false, false, false, '2026-08-21 01:32:03.990839+00', '2026-08-21 01:53:19.601382+00');
+INSERT INTO public.role_permissions VALUES ('567e3b72-b765-4402-b51a-ca7ac9c2f613', 'editor', 'profile', true, false, true, false, '2026-08-21 01:32:03.990839+00', '2026-08-21 01:53:19.607564+00');
 
 
 --
 -- Data for Name: site_settings; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.site_settings (id, portal_name, hero_title, hero_subtitle, hero_image_url, contact_email, updated_at, explore_title, explore_subtitle, explore_image_url, stats_bg_image, company_name, company_website, contact_phone, company_address, facebook_url, twitter_url, linkedin_url, instagram_url, tiktok_url, logo_url, favicon_url) FROM stdin;
-1	MKN Portal 	Sinergi Terintegrasi	Satu portal untuk semua sistem. Pilih layanan yang ingin Anda akses.	\N	contact@mkncorp.com	2026-08-21 01:32:03.431243+00	Pusat Layanan & Aplikasi \nTerintegrasi 	Seluruh sistem operasional dan layanan manajemen perusahaan kini berada dalam satu genggaman untuk mendukung produktivitas kerja harian Anda.	http://127.0.0.1:54331/storage/v1/object/public/portal_assets/hero/explore_0.4790865459782291.png	http://127.0.0.1:54331/storage/v1/object/public/portal_assets/hero/stats_bg_0.4189328328365368.png	PT. Multi Kontrol Nusantara	www.mkncorp.com	0549-2026162	KPC Communication Building\nTango Delta D8, Sangatta	\N	\N	https://id.linkedin.com/company/mkncorp	https://www.instagram.com/multikontrolnusantara/	\N	http://127.0.0.1:54331/storage/v1/object/public/portal_assets/brand/logo_url_0.03130436299706607.png	\N
-\.
+INSERT INTO public.site_settings VALUES (1, 'MKN Portal ', 'Sinergi Terintegrasi', 'Satu portal untuk semua sistem. Pilih layanan yang ingin Anda akses.', NULL, 'contact@mkncorp.com', '2026-08-21 01:32:03.431243+00', 'Pusat Layanan & Aplikasi 
+Terintegrasi ', 'Seluruh sistem operasional dan layanan manajemen perusahaan kini berada dalam satu genggaman untuk mendukung produktivitas kerja harian Anda.', 'http://127.0.0.1:54331/storage/v1/object/public/portal_assets/hero/explore_0.4790865459782291.png', 'http://127.0.0.1:54331/storage/v1/object/public/portal_assets/hero/stats_bg_0.4189328328365368.png', 'PT. Multi Kontrol Nusantara', 'www.mkncorp.com', '0549-2026162', 'KPC Communication Building
+Tango Delta D8, Sangatta', NULL, NULL, 'https://id.linkedin.com/company/mkncorp', 'https://www.instagram.com/multikontrolnusantara/', NULL, 'http://127.0.0.1:54331/storage/v1/object/public/portal_assets/brand/logo_url_0.03130436299706607.png', NULL);
 
 
 --
 -- Data for Name: user_roles; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.user_roles (id, user_id, role, created_at) FROM stdin;
-e5640e25-58fa-44d1-ba60-39e607790724	00000000-0000-0000-0000-000000000000	admin	2026-08-21 01:32:04.291111+00
-863563b0-ba9f-40c8-b941-d4d8dbeb45a2	98cdae46-c20a-462b-8457-007bd2076d45	admin	2026-08-21 01:53:41.999823+00
-\.
+INSERT INTO public.user_roles VALUES ('e5640e25-58fa-44d1-ba60-39e607790724', '00000000-0000-0000-0000-000000000000', 'admin', '2026-08-21 01:32:04.291111+00');
+INSERT INTO public.user_roles VALUES ('863563b0-ba9f-40c8-b941-d4d8dbeb45a2', '98cdae46-c20a-462b-8457-007bd2076d45', 'admin', '2026-08-21 01:53:41.999823+00');
 
 
 --
@@ -1495,7 +1476,6 @@ ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public GRANT ALL ON T
 -- PostgreSQL database dump complete
 --
 
-\unrestrict vad75tQigzkQsoebGmbCHRYHBuc4Qz2EG0XDPbgikpihF1x2czKKRwaAtEUQdX0
 
 
 -- =============================================
