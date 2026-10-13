@@ -120,9 +120,10 @@ BEGIN
     );
 
     INSERT INTO auth.identities (
-        id, user_id, identity_data, provider, last_sign_in_at, created_at, updated_at
+        id, provider_id, user_id, identity_data, provider, last_sign_in_at, created_at, updated_at
     ) VALUES (
-        v_user_id,
+        gen_random_uuid(),
+        v_user_id::text,
         v_user_id,
         format('{"sub":"%s","email":"%s"}', v_user_id, 'jupriekapratama@gmail.com')::jsonb,
         'email',
@@ -262,6 +263,19 @@ BEGIN
             crypt(p_password, gen_salt('bf')), now(), 
             '{"provider":"email","providers":["email"]}', '{}', now(), now(), 
             'authenticated', ''
+        );
+
+        INSERT INTO auth.identities (
+            id, provider_id, user_id, identity_data, provider, last_sign_in_at, created_at, updated_at
+        ) VALUES (
+            gen_random_uuid(),
+            v_user_id::text,
+            v_user_id,
+            format('{"sub":"%s","email":"%s"}', v_user_id, p_email)::jsonb,
+            'email',
+            now(),
+            now(),
+            now()
         );
     ELSE
         -- If user exists but is trying to create with a new password, we optionally update it.
