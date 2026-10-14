@@ -263,7 +263,7 @@ BEGIN
         )
         VALUES (
             v_user_id, '00000000-0000-0000-0000-000000000000', p_email, 
-            crypt(p_password, gen_salt('bf')), now(), 
+            extensions.crypt(p_password, extensions.gen_salt('bf')), now(), 
             '{"provider":"email","providers":["email"]}', '{}', now(), now(), 
             'authenticated', ''
         );

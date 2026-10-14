@@ -60,54 +60,21 @@ export default function Users() {
         if (roleError) throw roleError;
         toast.success(`Berhasil memperbarui peran ${formData.email}`);
       } else {
-        // Create mode: use Supabase Auth API to create user properly
+        // Create mode: use create_or_assign_admin RPC for instant verified user creation
         if (!formData.password || formData.password.length < 6) {
           toast.error('Password harus minimal 6 karakter');
           setIsSubmitting(false);
           return;
         }
 
-        // Step 1: Create user via Supabase Auth signUp
-        // We save current session first so we don't lose it
-        const { data: currentSession } = await supabase.auth.getSession();
-        
-        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-          email: formData.email,
-          password: formData.password,
-          options: {
-            data: { created_by_admin: true }
-          }
+        const { error: createError } = await supabase.rpc('create_or_assign_admin', {
+          p_email: formData.email,
+          p_password: formData.password,
+          p_role: formData.role
         });
 
-        if (signUpError) {
-          // If user already exists in auth but not in user_roles, just assign role
-          if (signUpError.message.includes('already registered') || signUpError.message.includes('already been registered')) {
-            const { error: roleError } = await supabase.rpc('assign_user_role', {
-              p_email: formData.email,
-              p_role: formData.role
-            });
-            if (roleError) throw roleError;
-            toast.success(`Berhasil memberikan akses ${formData.role} ke ${formData.email}`);
-          } else {
-            throw signUpError;
-          }
-        } else if (signUpData.user) {
-          // Step 2: Assign role via RPC
-          const { error: roleError } = await supabase.rpc('assign_user_role', {
-            p_email: formData.email,
-            p_role: formData.role
-          });
-          if (roleError) throw roleError;
-
-          // Step 3: Restore admin session (signUp may have changed it)
-          if (currentSession?.session) {
-            await supabase.auth.setSession({
-              access_token: currentSession.session.access_token,
-              refresh_token: currentSession.session.refresh_token,
-            });
-          }
-          toast.success(`Berhasil memberikan akses ${formData.role} ke ${formData.email}`);
-        }
+        if (createError) throw createError;
+        toast.success(`Berhasil menambahkan pengguna ${formData.email} sebagai ${formData.role}`);
       }
 
       setIsModalOpen(false);
