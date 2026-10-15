@@ -3,7 +3,7 @@ import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { AdminHeader } from '../../components/ui/AdminHeader';
 import { Input } from '../../components/ui/Input';
-import { User, Key, SignOut, UploadSimple, Camera } from '@phosphor-icons/react';
+import { User, Key, SignOut, Camera } from '@phosphor-icons/react';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 
@@ -32,6 +32,17 @@ export default function Profile() {
     }
   }, [session]);
 
+  const logActivity = async (target: string) => {
+    if (session?.user.id) {
+      await supabase.from('activity_logs').insert({
+        user_id: session.user.id,
+        action: 'memperbarui',
+        target: target,
+        type: 'success'
+      });
+    }
+  };
+
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!oldPassword) {
@@ -49,7 +60,6 @@ export default function Profile() {
 
     setIsUpdatingPassword(true);
     
-    // 1. Verify old password by attempting to sign in
     const { error: signInError } = await supabase.auth.signInWithPassword({
       email: session?.user.email || '',
       password: oldPassword
@@ -61,7 +71,6 @@ export default function Profile() {
       return;
     }
 
-    // 2. If successful, update to new password
     const { error } = await supabase.auth.updateUser({
       password: password
     });
@@ -73,7 +82,7 @@ export default function Profile() {
       setOldPassword('');
       setPassword('');
       setConfirmPassword('');
-      logActivity('Password Profil');
+      await logActivity('Password Profil');
     }
     setIsUpdatingPassword(false);
   };
@@ -89,7 +98,6 @@ export default function Profile() {
       }
     };
 
-    // If email changed, we also request email update
     const isEmailChanged = email !== session?.user.email;
     if (isEmailChanged) {
       updates.email = email;
@@ -105,9 +113,8 @@ export default function Profile() {
       } else {
         toast.success('Profil berhasil diperbarui');
       }
-      logActivity('Informasi Profil');
-      // Force reload to update session context in sidebar
-      setTimeout(() => window.location.reload(), 1500);
+      await logActivity('Informasi Profil');
+      await supabase.auth.refreshSession();
     }
     setIsUpdatingProfile(false);
   };
@@ -124,7 +131,7 @@ export default function Profile() {
     const toastId = toast.loading('Mengunggah foto...');
     try {
       const fileExt = file.name.split('.').pop();
-      const fileName = `avatars/${session?.user.id}-${Math.random()}.${fileExt}`;
+      const fileName = `avatars/${session?.user.id}-${Date.now()}.${fileExt}`;
       
       const { error: uploadError } = await supabase.storage
         .from('portal_assets')
@@ -137,20 +144,9 @@ export default function Profile() {
         .getPublicUrl(fileName);
 
       setAvatarUrl(publicUrl);
-      toast.success('Foto berhasil diunggah', { id: toastId });
+      toast.success('Foto berhasil diunggah, klik Simpan Profil untuk menerapkan', { id: toastId });
     } catch (error: any) {
       toast.error('Gagal mengunggah foto', { id: toastId });
-    }
-  };
-
-  const logActivity = async (target: string) => {
-    if (session?.user.id) {
-      await supabase.from('activity_logs').insert({
-        user_id: session.user.id,
-        action: 'memperbarui',
-        target: target,
-        type: 'success'
-      });
     }
   };
 
@@ -162,10 +158,7 @@ export default function Profile() {
 
   const userEmail = session?.user?.email || '';
   const initial = (fullName || userEmail).charAt(0).toUpperCase();
-  const isProfileDirty = 
-    fullName !== (session?.user?.user_metadata?.full_name || '') || 
-    avatarUrl !== (session?.user?.user_metadata?.avatar_url || '') ||
-    email !== userEmail;
+  const roleLabel = userRole === 'admin' ? 'Super Admin' : userRole === 'editor' ? 'Editor' : 'User Biasa';
 
   return (
     <div className="animate-fade-in-up space-y-8 pb-12">
@@ -210,7 +203,7 @@ export default function Profile() {
 
             <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full text-xs font-bold border border-emerald-200">
               <User className="w-3.5 h-3.5" weight="fill" />
-              {userRole === 'admin' ? 'Super Admin' : 'Editor'}
+              {roleLabel}
             </div>
           </div>
 
@@ -249,7 +242,6 @@ export default function Profile() {
 
         {/* Password Update Form */}
         <div className="md:col-span-2">
-          {/* Change Password Card */}
           <div className="bg-white rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/40 overflow-hidden relative">
             <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-emerald-500 to-teal-400"></div>
             
@@ -264,39 +256,38 @@ export default function Profile() {
             </div>
 
             <form onSubmit={handleUpdatePassword} className="p-8 space-y-6">
-                
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">Password Saat Ini</label>
-                  <Input 
-                    type="password" 
-                    value={oldPassword}
-                    onChange={(e) => setOldPassword(e.target.value)}
-                    placeholder="Masukkan password lama Anda"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">Password Baru</label>
-                  <Input 
-                    type="password" 
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Minimal 6 karakter"
-                    required
-                  />
-                </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">Password Saat Ini</label>
+                <Input 
+                  type="password" 
+                  value={oldPassword}
+                  onChange={(e) => setOldPassword(e.target.value)}
+                  placeholder="Masukkan password lama Anda"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">Password Baru</label>
+                <Input 
+                  type="password" 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Minimal 6 karakter"
+                  required
+                />
+              </div>
 
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">Konfirmasi Password Baru</label>
-                  <Input 
-                    type="password" 
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Ulangi password baru"
-                    required
-                  />
-                </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">Konfirmasi Password Baru</label>
+                <Input 
+                  type="password" 
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Ulangi password baru"
+                  required
+                />
+              </div>
 
               <div className="pt-2 flex justify-end">
                 <button 

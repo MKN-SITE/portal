@@ -1,10 +1,12 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { ArrowRight, Code2, LayoutGrid, ChevronLeft, ChevronRight, Settings, Activity, Database, BarChart2, ShieldCheck, Headset, Cctv } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Settings, Activity, Database, BarChart2, ShieldCheck, Headset, Cctv, Menu, X } from 'lucide-react';
 import { MagnifyingGlass } from '@phosphor-icons/react';
 import { LogoIntroModal } from './ui/LogoIntroModal';
 import { FadeIn } from './ui/FadeIn';
 import { MarqueeItem } from '../data/portalData';
 import { optimizeImage } from '../lib/imageUtils';
+import { supabase } from '../lib/supabase';
+import logoMkn from '../assets/images/logo_mkn.png';
 
 const getIconForPortal = (index: number, className: string = "") => {
   const icons = [Settings, Activity, Database, BarChart2, ShieldCheck, Headset, Cctv];
@@ -57,12 +59,10 @@ const CARD_THEMES = [
   },
 ];
 
-const PortalAppItem = ({ portal, theme, themeIdx, idx }: { key?: string | number, portal: MarqueeItem, theme: typeof CARD_THEMES[0], themeIdx: number, idx: number }) => {
-  const isCircle = true; // Always use circle to match reference nicely, or keep the alternating logic. Let's make it always circle.
-  let displayTitle = portal.title.replace(' Portal', '');
+const PortalAppItem = ({ portal, theme, themeIdx }: { key?: string | number, portal: MarqueeItem, theme: typeof CARD_THEMES[0], themeIdx: number, idx: number }) => {
+  const displayTitle = portal.title.replace(' Portal', '');
   
-  const handleClick = (e: React.MouseEvent) => {
-    // Fire click tracking without blocking navigation
+  const handleClick = () => {
     supabase.rpc('increment_portal_click', { p_portal_id: portal.id }).then(() => {}).catch(() => {});
   };
 
@@ -91,11 +91,9 @@ const PortalAppItem = ({ portal, theme, themeIdx, idx }: { key?: string | number
   );
 };
 
-
-import { supabase } from '../lib/supabase';
-
-export const HeroSection: React.FC<HeroSectionProps> = ({ onOpenContact, onNavigate, onExpandPortals }) => {
+export const HeroSection: React.FC<HeroSectionProps> = ({ onOpenContact, onExpandPortals }) => {
   const [isIntroOpen, setIsIntroOpen] = useState(false);
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [bgImageIdx, setBgImageIdx] = useState(0);
   const [heroImages, setHeroImages] = useState<string[]>([]);
@@ -145,12 +143,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onOpenContact, onNavig
       }
 
       if (portalsRes.data && portalsRes.data.length > 0) {
-        // Map database portal items to MarqueeItem interface if needed
         const mappedPortals = portalsRes.data.map((item: any) => ({
           ...item,
           clientOrType: item.client_or_type,
           customImage: item.custom_image,
-          customIcon: item.custom_image // The UI uses customIcon
+          customIcon: item.custom_image
         }));
         setPortals(mappedPortals as MarqueeItem[]);
       }
@@ -196,7 +193,6 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onOpenContact, onNavig
     return () => clearInterval(timer);
   }, [heroImages]);
 
-  // Preload all hero background images so transitions are instant (no blank flash)
   useEffect(() => {
     if (heroImages.length === 0) return;
     heroImages.forEach((url) => {
@@ -206,15 +202,16 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onOpenContact, onNavig
   }, [heroImages]);
 
   const filteredPortals = useMemo(() => {
-    if (!searchQuery) return portals;
+    if (!searchQuery.trim()) return portals;
     const lowerQuery = searchQuery.toLowerCase();
     return portals.filter(p =>
       p.title.toLowerCase().includes(lowerQuery) ||
-      (p.description && p.description.toLowerCase().includes(lowerQuery))
+      (p.description && p.description.toLowerCase().includes(lowerQuery)) ||
+      (p.category && p.category.toLowerCase().includes(lowerQuery)) ||
+      (Array.isArray(p.tags) && p.tags.some(tag => tag.toLowerCase().includes(lowerQuery)))
     );
   }, [searchQuery, portals]);
 
-  // Calculate column width dynamically based on container
   const [colWidth, setColWidth] = useState(0);
   const [visibleCols, setVisibleCols] = useState(4);
   const [gapSize, setGapSize] = useState(20);
@@ -223,10 +220,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onOpenContact, onNavig
     const measure = () => {
       if (scrollContainerRef.current) {
         const containerWidth = scrollContainerRef.current.clientWidth;
-        // Responsive columns: 4 on all sizes, but gap changes
         const isMobile = window.innerWidth < 640;
-        const gap = isMobile ? 8 : 20; // gap-2 on mobile, gap-5 on desktop
-        const cols = isMobile ? 4 : 4;
+        const gap = isMobile ? 8 : 20;
+        const cols = 4;
         setGapSize(gap);
         setVisibleCols(cols);
         const w = (containerWidth - (cols - 1) * gap) / cols;
@@ -266,6 +262,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onOpenContact, onNavig
           " />
         </filter>
       </svg>
+
       {/* Background Image Slider */}
       {heroImages.map((img, idx) => (
         <div 
@@ -274,7 +271,6 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onOpenContact, onNavig
           style={{ backgroundImage: `url(${img})` }}
         />
       ))}
-      
 
       {/* Seamless transition into the Dark Stats Section */}
       <div className="absolute inset-0 bg-gradient-to-t from-[#2B3F56] via-transparent to-transparent pointer-events-none" />
@@ -283,53 +279,88 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onOpenContact, onNavig
       <div className="absolute top-0 left-0 right-0 h-40 bg-gradient-to-b from-black/50 via-black/20 to-transparent pointer-events-none" />
 
       {/* HEADER */}
-      <header className={`fixed top-0 left-0 right-0 z-50 w-full transition-all duration-300 ${isScrolled ? 'bg-white/95 backdrop-blur-xl shadow-sm border-b border-slate-200/60' : 'bg-transparent border-transparent'}`}>
-        <div className="max-w-[1600px] mx-auto px-6 h-24 flex items-center justify-between">
+      <header className={`fixed top-0 left-0 right-0 z-50 w-full transition-all duration-300 ${isScrolled || isMobileNavOpen ? 'bg-white/95 backdrop-blur-xl shadow-sm border-b border-slate-200/60' : 'bg-transparent border-transparent'}`}>
+        <div className="max-w-[1600px] mx-auto px-6 h-20 md:h-24 flex items-center justify-between">
           
           {/* Logo Container */}
           <div 
             className={`flex items-center cursor-pointer group transition-opacity duration-300 ${isLoading ? 'opacity-0' : 'opacity-100'}`}
             onClick={() => setIsIntroOpen(true)}
           >
-            {siteSettings.logo_url ? (
-              <div className="w-auto h-16 md:h-20 flex items-center justify-center group-hover:scale-105 transition-transform">
-                <img 
-                  src={siteSettings.logo_url} 
-                  alt="Logo" 
-                  className="max-h-full object-contain transition-all duration-300" 
-                  style={!isScrolled ? { filter: 'url(#mkn-logo-filter) drop-shadow(0px 2px 4px rgba(0,0,0,0.3))' } : {}}
-                />
-              </div>
-            ) : (
-              <div className="w-auto h-16 md:h-20 flex items-center justify-center p-1 group-hover:scale-105 transition-transform overflow-hidden">
-                <img 
-                  src="/src/assets/images/logo_mkn.png" 
-                  alt="MKN Logo" 
-                  className="max-h-full object-contain transition-all duration-300" 
-                  style={!isScrolled ? { filter: 'url(#mkn-logo-filter) drop-shadow(0px 2px 4px rgba(0,0,0,0.3))' } : {}} 
-                />
-              </div>
-            )}
+            <div className="w-auto h-14 md:h-20 flex items-center justify-center p-1 group-hover:scale-105 transition-transform overflow-hidden">
+              <img 
+                src={siteSettings.logo_url || logoMkn} 
+                alt={siteSettings.portal_name || 'MKN Logo'} 
+                className="max-h-full object-contain transition-all duration-300" 
+                style={!isScrolled && !isMobileNavOpen ? { filter: 'url(#mkn-logo-filter) drop-shadow(0px 2px 4px rgba(0,0,0,0.3))' } : {}}
+              />
+            </div>
           </div>
 
-          {/* Navigation Container */}
+          {/* Desktop Navigation Container */}
           <nav className="hidden md:flex items-center gap-8">
             <button 
               onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} 
-              className={`relative text-[13px] font-bold uppercase tracking-wider transition-all duration-300 py-2 group ${isScrolled ? 'text-slate-600 hover:text-[#233B8E]' : 'text-white/90 hover:text-white'}`}
+              className={`relative text-[13px] font-bold uppercase tracking-wider transition-all duration-300 py-2 group cursor-pointer ${isScrolled ? 'text-slate-600 hover:text-[#233B8E]' : 'text-white/90 hover:text-white'}`}
             >
               Beranda
               <span className={`absolute bottom-1 left-1/2 -translate-x-1/2 w-0 h-[2px] rounded-full group-hover:w-full transition-all duration-300 ease-out ${isScrolled ? 'bg-[#233B8E]' : 'bg-white'}`} />
             </button>
             <button 
               onClick={onExpandPortals} 
-              className={`relative text-[13px] font-bold uppercase tracking-wider transition-all duration-300 py-2 group ${isScrolled ? 'text-[#E05A44] hover:text-[#c44935]' : 'text-white/90 hover:text-white'}`}
+              className={`relative text-[13px] font-bold uppercase tracking-wider transition-all duration-300 py-2 group cursor-pointer ${isScrolled ? 'text-[#E05A44] hover:text-[#c44935]' : 'text-white/90 hover:text-white'}`}
             >
               Eksplorasi Portal
               <span className={`absolute bottom-1 left-1/2 -translate-x-1/2 w-0 h-[2px] rounded-full group-hover:w-full transition-all duration-300 ease-out ${isScrolled ? 'bg-[#E05A44]' : 'bg-white'}`} />
             </button>
           </nav>
+
+          {/* Mobile Menu Toggle Button */}
+          <button
+            onClick={() => setIsMobileNavOpen(!isMobileNavOpen)}
+            aria-label="Menu Navigasi"
+            className={`md:hidden p-2.5 rounded-xl transition-colors ${
+              isScrolled || isMobileNavOpen
+                ? 'text-slate-800 hover:bg-slate-100'
+                : 'text-white bg-white/10 hover:bg-white/20 backdrop-blur-md'
+            }`}
+          >
+            {isMobileNavOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
         </div>
+
+        {/* Mobile Dropdown Menu */}
+        {isMobileNavOpen && (
+          <div className="md:hidden bg-white border-b border-slate-200 px-6 py-4 space-y-2 shadow-lg">
+            <button
+              onClick={() => {
+                setIsMobileNavOpen(false);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              className="w-full text-left py-2.5 px-3 rounded-xl text-sm font-bold uppercase tracking-wider text-slate-700 hover:bg-slate-50"
+            >
+              Beranda
+            </button>
+            <button
+              onClick={() => {
+                setIsMobileNavOpen(false);
+                onExpandPortals?.();
+              }}
+              className="w-full text-left py-2.5 px-3 rounded-xl text-sm font-bold uppercase tracking-wider text-[#E05A44] hover:bg-rose-50"
+            >
+              Eksplorasi Portal
+            </button>
+            <button
+              onClick={() => {
+                setIsMobileNavOpen(false);
+                onOpenContact();
+              }}
+              className="w-full text-left py-2.5 px-3 rounded-xl text-sm font-bold uppercase tracking-wider text-[#1B3A6B] hover:bg-blue-50"
+            >
+              Bantuan & Kontak
+            </button>
+          </div>
+        )}
       </header>
 
       {/* MAIN CONTENT */}
@@ -369,7 +400,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onOpenContact, onNavig
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Cari aplikasi atau layanan..."
+                  placeholder="Cari aplikasi, kategori, atau layanan..."
                   className="w-full bg-white/10 backdrop-blur-md border border-white/20 rounded-full py-4 pl-16 pr-6 text-white placeholder-white/70 focus:outline-none focus:bg-white/20 focus:border-white/40 focus:ring-4 focus:ring-white/10 transition-all shadow-lg text-base font-medium"
                 />
               </div>
@@ -386,7 +417,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onOpenContact, onNavig
                   {/* Panah Kiri */}
                   <button 
                     onClick={scrollLeft} 
-                    className="shrink-0 z-20 bg-black/20 hover:bg-black/40 backdrop-blur-md p-3 md:p-4 rounded-full text-white opacity-0 group-hover:opacity-100 transition-all duration-300 hidden md:flex"
+                    className="shrink-0 z-20 bg-black/20 hover:bg-black/40 backdrop-blur-md p-3 md:p-4 rounded-full text-white opacity-0 group-hover:opacity-100 transition-all duration-300 hidden md:flex cursor-pointer"
                   >
                     <ChevronLeft className="w-6 h-6 stroke-[3]" />
                   </button>
@@ -423,15 +454,15 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onOpenContact, onNavig
                   {/* Panah Kanan */}
                   <button 
                     onClick={scrollRight} 
-                    className="shrink-0 z-20 bg-black/20 hover:bg-black/40 backdrop-blur-md p-3 md:p-4 rounded-full text-white opacity-0 group-hover:opacity-100 transition-all duration-300 hidden md:flex"
+                    className="shrink-0 z-20 bg-black/20 hover:bg-black/40 backdrop-blur-md p-3 md:p-4 rounded-full text-white opacity-0 group-hover:opacity-100 transition-all duration-300 hidden md:flex cursor-pointer"
                   >
                     <ChevronRight className="w-6 h-6 stroke-[3]" />
                   </button>
                 </div>
               </div>
             ) : (
-              <div className="py-24 text-center bg-white rounded-3xl border border-slate-200 shadow-sm w-full max-w-2xl mx-auto px-6">
-                <p className="text-slate-500 text-lg font-medium">Tidak ada aplikasi yang sesuai dengan "{searchQuery}"</p>
+              <div className="py-16 text-center bg-white/95 backdrop-blur-md rounded-3xl border border-slate-200 shadow-sm w-full max-w-2xl mx-auto px-6 mt-4">
+                <p className="text-slate-600 text-lg font-medium">Tidak ada aplikasi yang sesuai dengan "{searchQuery}"</p>
               </div>
             )}
           </FadeIn>

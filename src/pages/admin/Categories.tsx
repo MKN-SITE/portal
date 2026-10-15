@@ -55,21 +55,38 @@ const ICON_OPTIONS = [
 
 export default function Categories() {
   const { hasPermission } = useAuth();
+  const canCreate = hasPermission('categories', 'create');
+  const canUpdate = hasPermission('categories', 'update');
+  const canDelete = hasPermission('categories', 'delete');
+
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [formData, setFormData] = useState({ name: '', icon: 'Gear' });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [draggedCategoryId, setDraggedCategoryId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchCategories();
   }, []);
 
+  const logActivity = async (action: string, target: string, type: 'info' | 'success' | 'warning' | 'error' = 'info', details?: string) => {
+    const { data: userData } = await supabase.auth.getUser();
+    if (userData.user) {
+      await supabase.from('activity_logs').insert({
+        user_id: userData.user.id,
+        action,
+        target,
+        details,
+        type,
+      });
+    }
+  };
+
   const fetchCategories = async () => {
     setLoading(true);
     try {
-      // Fetch categories
       const { data: catData, error: catError } = await supabase
         .from('categories')
         .select('*')
@@ -77,7 +94,6 @@ export default function Categories() {
 
       if (catError) throw catError;
 
-      // Fetch portal counts per category
       const { data: portalData } = await supabase
         .from('portal_items')
         .select('category');
@@ -99,12 +115,17 @@ export default function Categories() {
     setLoading(false);
   };
 
-  const handleToggle = async (id: string, currentStatus: boolean) => {
+  const handleToggle = async (id: string, currentStatus: boolean, name: string) => {
+    if (!canUpdate) {
+      toast.error('Anda tidak memiliki izin untuk mengubah kategori');
+      return;
+    }
     const { error } = await supabase.from('categories').update({ is_active: !currentStatus }).eq('id', id);
     if (error) {
       toast.error('Gagal memperbarui status');
     } else {
       setCategories(categories.map(c => c.id === id ? { ...c, is_active: !currentStatus } : c));
+      await logActivity(!currentStatus ? 'mengaktifkan' : 'menonaktifkan', `Kategori ${name}`, 'info');
       toast.success(`Kategori ${!currentStatus ? 'diaktifkan' : 'dinonaktifkan'}`);
     }
   };
@@ -136,24 +157,35 @@ export default function Categories() {
     setIsSubmitting(true);
 
     if (editingCategory) {
+      const oldName = editingCategory.name;
+      const newName = formData.name.trim();
       const { error } = await supabase
         .from('categories')
-        .update({ name: formData.name.trim(), icon: formData.icon })
+        .update({ name: newName, icon: formData.icon })
         .eq('id', editingCategory.id);
 
       if (error) {
         toast.error('Gagal memperbarui: ' + error.message);
       } else {
+        // If category name changed, also update linked portal_items so they don't get orphaned
+        if (oldName !== newName) {
+          await supabase
+            .from('portal_items')
+            .update({ category: newName })
+            .eq('category', oldName);
+        }
+        await logActivity('memperbarui', `Kategori ${newName}`, 'info');
         toast.success('Kategori berhasil diperbarui');
         handleCloseModal();
         fetchCategories();
       }
     } else {
       const maxOrder = categories.reduce((max, c) => Math.max(max, c.display_order || 0), 0);
+      const newName = formData.name.trim();
       const { error } = await supabase
         .from('categories')
         .insert({ 
-          name: formData.name.trim(), 
+          name: newName, 
           icon: formData.icon, 
           is_active: true, 
           display_order: maxOrder + 1 
@@ -162,6 +194,7 @@ export default function Categories() {
       if (error) {
         toast.error('Gagal menambahkan: ' + error.message);
       } else {
+        await logActivity('membuat', `Kategori ${newName}`, 'success');
         toast.success('Kategori berhasil ditambahkan');
         handleCloseModal();
         fetchCategories();
@@ -181,8 +214,39 @@ export default function Categories() {
     if (error) {
       toast.error('Gagal menghapus: ' + error.message);
     } else {
+      await logActivity('menghapus', `Kategori ${cat.name}`, 'error');
       toast.success('Kategori berhasil dihapus');
       setCategories(categories.filter(c => c.id !== cat.id));
+    }
+  };
+
+  const handleDropCategory = async (targetId: string) => {
+    if (!canUpdate || !draggedCategoryId || draggedCategoryId === targetId) return;
+
+    const draggedIdx = categories.findIndex(c => c.id === draggedCategoryId);
+    const targetIdx = categories.findIndex(c => c.id === targetId);
+    if (draggedIdx === -1 || targetIdx === -1) return;
+
+    const reordered = [...categories];
+    const [draggedItem] = reordered.splice(draggedIdx, 1);
+    reordered.splice(targetIdx, 0, draggedItem);
+
+    const updatedWithOrder = reordered.map((c, idx) => ({ ...c, display_order: idx }));
+    setCategories(updatedWithOrder);
+    setDraggedCategoryId(null);
+
+    const loadingToast = toast.loading('Menyimpan urutan kategori...');
+    try {
+      await Promise.all(
+        updatedWithOrder.map((c, idx) =>
+          supabase.from('categories').update({ display_order: idx }).eq('id', c.id)
+        )
+      );
+      await logActivity('mengurutkan ulang', 'Kategori Layanan', 'info');
+      toast.success('Urutan kategori berhasil disimpan', { id: loadingToast });
+    } catch {
+      toast.error('Gagal menyimpan urutan kategori', { id: loadingToast });
+      fetchCategories();
     }
   };
 
@@ -199,7 +263,7 @@ export default function Categories() {
         title="Kategori Layanan" 
         subtitle="Kategori digunakan untuk memfilter portal di halaman eksplorasi publik"
         action={
-          hasPermission('categories', 'create') && (
+          canCreate && (
             <button 
               onClick={() => handleOpenModal()}
               className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-5 py-2.5 rounded-xl font-semibold text-sm transition-colors shadow-sm"
@@ -214,7 +278,7 @@ export default function Categories() {
       <div className="bg-white border border-slate-200 rounded-xl p-4 flex items-center gap-3 shadow-sm">
         <Info className="w-5 h-5 text-slate-500 shrink-0" weight="regular" />
         <p className="text-sm font-medium text-slate-700">
-          Kategori dengan 0 portal tidak akan ditampilkan di halaman publik.
+          Seret ikon titik enam di sebelah kiri untuk mengatur urutan tampil kategori di halaman publik.
         </p>
       </div>
 
@@ -232,7 +296,7 @@ export default function Categories() {
             </div>
             <h3 className="text-lg font-semibold text-slate-900 mb-1">Belum Ada Kategori</h3>
             <p className="text-slate-500 text-sm mb-4">Mulai dengan menambahkan kategori pertama untuk portal Anda.</p>
-            {hasPermission('categories', 'create') && (
+            {canCreate && (
               <button 
                 onClick={() => handleOpenModal()}
                 className="text-slate-900 font-medium hover:underline flex items-center gap-2 mx-auto"
@@ -244,10 +308,35 @@ export default function Categories() {
         ) : categories.map((cat) => {
           const IconComponent = getPhosphorIcon(cat.icon);
           return (
-            <div key={cat.id} className="flex items-center gap-4 px-6 py-4 hover:bg-slate-50/50 transition-colors group">
-              
+            <div
+              key={cat.id}
+              draggable={canUpdate}
+              onDragStart={(e) => {
+                if (!canUpdate) return;
+                setDraggedCategoryId(cat.id);
+                e.dataTransfer.effectAllowed = 'move';
+              }}
+              onDragOver={(e) => {
+                e.preventDefault();
+                if (!canUpdate) return;
+                e.dataTransfer.dropEffect = 'move';
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                handleDropCategory(cat.id);
+              }}
+              onDragEnd={() => setDraggedCategoryId(null)}
+              className={`flex items-center gap-4 px-6 py-4 hover:bg-slate-50/50 transition-all group ${
+                draggedCategoryId === cat.id ? 'opacity-50 bg-blue-50/40' : ''
+              }`}
+            >
               {/* Drag Handle */}
-              <div className="text-slate-300 group-hover:text-slate-400 transition-colors cursor-grab active:cursor-grabbing">
+              <div
+                className={`text-slate-300 group-hover:text-slate-400 transition-colors ${
+                  canUpdate ? 'cursor-grab active:cursor-grabbing' : 'cursor-default opacity-40'
+                }`}
+                title={canUpdate ? 'Seret untuk mengubah urutan' : undefined}
+              >
                 <DotsSixVertical className="w-5 h-5" weight="bold" />
               </div>
 
@@ -283,20 +372,24 @@ export default function Categories() {
                 
                 {/* Toggle Switch */}
                 <button 
-                  onClick={() => handleToggle(cat.id, cat.is_active)}
+                  onClick={() => handleToggle(cat.id, cat.is_active, cat.name)}
+                  disabled={!canUpdate}
                   className={`w-11 h-6 rounded-full flex items-center p-1 transition-colors ${
+                    !canUpdate ? 'opacity-60 cursor-not-allowed' : ''
+                  } ${
                     cat.is_active ? 'bg-slate-900' : 'bg-slate-200'
                   }`}
+                  title={cat.is_active ? 'Nonaktifkan Kategori' : 'Aktifkan Kategori'}
                 >
                   <div className={`w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${
                     cat.is_active ? 'translate-x-5' : 'translate-x-0'
                   }`} />
                 </button>
 
-                <div className="w-px h-6 bg-slate-200"></div>
+                {(canUpdate || canDelete) && <div className="w-px h-6 bg-slate-200"></div>}
 
                 {/* Edit */}
-                {hasPermission('categories', 'update') && (
+                {canUpdate && (
                   <button 
                     onClick={() => handleOpenModal(cat)}
                     className="text-slate-400 hover:text-slate-700 transition-colors p-1"
@@ -306,7 +399,7 @@ export default function Categories() {
                   </button>
                 )}
                 {/* Delete */}
-                {hasPermission('categories', 'delete') && (
+                {canDelete && (
                   <button 
                     onClick={() => handleDelete(cat)}
                     className="text-slate-400 hover:text-red-500 transition-colors p-1"

@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { 
-  PageKey, RolePermissions, ADMIN_FULL_ACCESS, DEFAULT_EDITOR_PERMISSIONS, checkPermission, PermissionAction 
+  PageKey, RolePermissions, ADMIN_FULL_ACCESS, DEFAULT_EDITOR_PERMISSIONS, DEFAULT_USER_PERMISSIONS, checkPermission, PermissionAction 
 } from '../config/permissions';
 
 interface AuthContextType {
@@ -37,38 +37,39 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [permissions, setPermissions] = useState<RolePermissions | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        checkAdminStatus(session.user.id);
-      } else {
-        setLoading(false);
-      }
-    });
+  const fetchRolePermissions = useCallback(async (role: string) => {
+    const baseDefaults = role === 'editor' ? DEFAULT_EDITOR_PERMISSIONS : DEFAULT_USER_PERMISSIONS;
+    try {
+      const { data, error } = await supabase
+        .from('role_permissions')
+        .select('page, can_view, can_create, can_update, can_delete')
+        .eq('role', role);
 
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        checkAdminStatus(session.user.id);
-      } else {
-        setIsAdmin(false);
-        setUserRole(null);
-        setPermissions(null);
-        setLoading(false);
+      if (error || !data || data.length === 0) {
+        setPermissions(baseDefaults);
+        return;
       }
-    });
 
-    return () => subscription.unsubscribe();
+      const perms: Partial<RolePermissions> = {};
+      for (const row of data) {
+        perms[row.page as PageKey] = {
+          can_view: row.can_view,
+          can_create: row.can_create,
+          can_update: row.can_update,
+          can_delete: row.can_delete,
+        };
+      }
+
+      // Ensure profile is always accessible for logged-in dashboard users
+      perms.profile = perms.profile || { can_view: true, can_create: false, can_update: true, can_delete: false };
+      setPermissions({ ...baseDefaults, ...perms } as RolePermissions);
+    } catch (err) {
+      console.error('Error fetching permissions:', err);
+      setPermissions(baseDefaults);
+    }
   }, []);
 
-  const checkAdminStatus = async (userId: string) => {
+  const checkAdminStatus = useCallback(async (userId: string) => {
     try {
       setLoading(true);
       const { data, error } = await supabase
@@ -85,14 +86,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       } else {
         const role = data?.role;
         setUserRole(role);
-        setIsAdmin(role === 'admin' || role === 'editor');
+        setIsAdmin(role === 'admin' || role === 'editor' || role === 'user');
         
         if (role === 'admin') {
-          // Admin always gets full access
           setPermissions(ADMIN_FULL_ACCESS);
-        } else if (role === 'editor') {
-          // Fetch editor permissions from DB
-          await fetchEditorPermissions(role);
+        } else if (role === 'editor' || role === 'user') {
+          await fetchRolePermissions(role);
         } else {
           setPermissions(null);
         }
@@ -105,40 +104,36 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [fetchRolePermissions]);
 
-  const fetchEditorPermissions = async (role: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('role_permissions')
-        .select('page, can_view, can_create, can_update, can_delete')
-        .eq('role', role);
-
-      if (error || !data || data.length === 0) {
-        // Fallback to defaults if DB permissions not found
-        console.warn('Using default editor permissions');
-        setPermissions(DEFAULT_EDITOR_PERMISSIONS);
-        return;
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        checkAdminStatus(session.user.id);
+      } else {
+        setLoading(false);
       }
+    });
 
-      // Build permissions object from DB rows
-      const perms: Partial<RolePermissions> = {};
-      for (const row of data) {
-        perms[row.page as PageKey] = {
-          can_view: row.can_view,
-          can_create: row.can_create,
-          can_update: row.can_update,
-          can_delete: row.can_delete,
-        };
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        checkAdminStatus(session.user.id);
+      } else {
+        setIsAdmin(false);
+        setUserRole(null);
+        setPermissions(null);
+        setLoading(false);
       }
-      
-      // Merge with defaults (in case new pages are added but not yet in DB)
-      setPermissions({ ...DEFAULT_EDITOR_PERMISSIONS, ...perms } as RolePermissions);
-    } catch (err) {
-      console.error('Error fetching permissions:', err);
-      setPermissions(DEFAULT_EDITOR_PERMISSIONS);
-    }
-  };
+    });
+
+    return () => subscription.unsubscribe();
+  }, [checkAdminStatus]);
 
   const canAccessPage = useCallback((page: string): boolean => {
     if (userRole === 'admin') return true;
@@ -153,10 +148,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, [userRole, permissions]);
 
   const refreshPermissions = useCallback(async () => {
-    if (userRole === 'editor') {
-      await fetchEditorPermissions(userRole);
+    if (userRole === 'editor' || userRole === 'user') {
+      await fetchRolePermissions(userRole);
     }
-  }, [userRole]);
+  }, [userRole, fetchRolePermissions]);
 
   return (
     <AuthContext.Provider value={{ 

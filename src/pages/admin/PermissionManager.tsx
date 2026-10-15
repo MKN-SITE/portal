@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { AdminHeader } from '../../components/ui/AdminHeader';
-import { PAGE_DEFINITIONS, PageKey, PagePermission, DEFAULT_EDITOR_PERMISSIONS } from '../../config/permissions';
+import { PAGE_DEFINITIONS, PagePermission, DEFAULT_EDITOR_PERMISSIONS, DEFAULT_USER_PERMISSIONS } from '../../config/permissions';
 import { Eye, Plus, PencilSimple, Trash, FloppyDisk, ArrowCounterClockwise, Info, ShieldCheck } from '@phosphor-icons/react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
@@ -15,7 +15,8 @@ export default function PermissionManager() {
   const [hasChanges, setHasChanges] = useState(false);
   const [originalPermissions, setOriginalPermissions] = useState<Record<string, PagePermission>>({});
   
-  const { user } = useAuth();
+  const { user, hasPermission, refreshPermissions } = useAuth();
+  const canUpdatePermissions = hasPermission('permissions', 'update');
 
   useEffect(() => {
     fetchPermissions(selectedRole);
@@ -31,22 +32,13 @@ export default function PermissionManager() {
 
       if (error) throw error;
 
-      // Transform array to Record<string, PagePermission>
+      const baseDefaults = role === 'editor' ? DEFAULT_EDITOR_PERMISSIONS : DEFAULT_USER_PERMISSIONS;
       const perms: Record<string, PagePermission> = {};
       
-      // Initialize with all false
-      Object.entries(DEFAULT_EDITOR_PERMISSIONS).forEach(([key]) => {
-        perms[key] = { can_view: false, can_create: false, can_update: false, can_delete: false };
+      Object.entries(baseDefaults).forEach(([key, val]) => {
+        perms[key] = { ...val };
       });
       
-      // Override with editor defaults if it's editor
-      if (role === 'editor') {
-        Object.entries(DEFAULT_EDITOR_PERMISSIONS).forEach(([key, val]) => {
-          perms[key] = { ...val };
-        });
-      }
-      
-      // Override with DB values
       if (data && data.length > 0) {
         data.forEach(row => {
           perms[row.page] = {
@@ -61,7 +53,7 @@ export default function PermissionManager() {
       setPermissions(perms);
       setOriginalPermissions(JSON.parse(JSON.stringify(perms)));
       setHasChanges(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching permissions:', error);
       toast.error('Gagal memuat pengaturan izin: ' + (error?.message || ''));
     } finally {
@@ -70,6 +62,7 @@ export default function PermissionManager() {
   };
 
   const handleToggle = (pageKey: string, action: keyof PagePermission) => {
+    if (!canUpdatePermissions) return;
     setPermissions(prev => {
       const newPerms = { ...prev };
       const currentPerm = newPerms[pageKey] || { can_view: false, can_create: false, can_update: false, can_delete: false };
@@ -77,15 +70,12 @@ export default function PermissionManager() {
       
       const updatedPerm = { ...currentPerm, [action]: newValue };
 
-      // Rules:
-      // When `can_view` is toggled OFF, automatically set create/update/delete to OFF too
       if (action === 'can_view' && !newValue) {
         updatedPerm.can_create = false;
         updatedPerm.can_update = false;
         updatedPerm.can_delete = false;
       }
 
-      // When `can_create`, `can_update`, or `can_delete` is toggled ON, automatically set `can_view` to ON
       if ((action === 'can_create' || action === 'can_update' || action === 'can_delete') && newValue) {
         updatedPerm.can_view = true;
       }
@@ -97,7 +87,9 @@ export default function PermissionManager() {
   };
 
   const handleReset = () => {
-    setPermissions(JSON.parse(JSON.stringify(DEFAULT_EDITOR_PERMISSIONS)));
+    if (!canUpdatePermissions) return;
+    const defaults = selectedRole === 'editor' ? DEFAULT_EDITOR_PERMISSIONS : DEFAULT_USER_PERMISSIONS;
+    setPermissions(JSON.parse(JSON.stringify(defaults)));
     setHasChanges(true);
     toast.success('Direset ke pengaturan bawaan. Jangan lupa simpan perubahan.');
   };
@@ -108,6 +100,7 @@ export default function PermissionManager() {
   };
 
   const handleSave = async () => {
+    if (!canUpdatePermissions) return;
     try {
       setSaving(true);
       for (const [page, p] of Object.entries(permissions)) {
@@ -122,11 +115,21 @@ export default function PermissionManager() {
         });
         
         if (error) {
-            console.error('RPC Error details:', error);
-            throw error;
+          console.error('RPC Error details:', error);
+          throw error;
         }
       }
+
+      if (user) {
+        await supabase.from('activity_logs').insert({
+          user_id: user.id,
+          action: 'memperbarui',
+          target: `Izin Role ${selectedRole === 'editor' ? 'Editor' : 'User Biasa'}`,
+          type: 'info'
+        });
+      }
       
+      await refreshPermissions();
       setOriginalPermissions(JSON.parse(JSON.stringify(permissions)));
       setHasChanges(false);
       toast.success('Perubahan izin berhasil disimpan');
@@ -149,7 +152,10 @@ export default function PermissionManager() {
   }) => (
     <button
       onClick={onClick}
-      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
+      disabled={!canUpdatePermissions}
+      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+        !canUpdatePermissions ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'
+      } ${
         isEnabled ? 'bg-[#1B3A6B]' : 'bg-slate-200'
       }`}
     >
@@ -171,12 +177,12 @@ export default function PermissionManager() {
     <div className="animate-fade-in-up pb-24">
       <AdminHeader title="Pengaturan Izin" subtitle="Kelola hak akses untuk berbagai role pengguna" />
       
-      <div className="mb-6 flex items-center justify-between bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
         <div>
           <h3 className="font-bold text-slate-800">Pilih Role Pengguna</h3>
           <p className="text-sm text-slate-500 mt-0.5">Izin di bawah ini akan diterapkan pada role yang Anda pilih</p>
         </div>
-        <div className="w-64">
+        <div className="w-full sm:w-64">
           <Select 
             options={[
               { value: 'editor', label: 'Editor' },
@@ -198,7 +204,7 @@ export default function PermissionManager() {
 
       <div className="mb-8 bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3">
         <Info className="w-5 h-5 text-amber-600 mt-0.5 shrink-0" weight="fill" />
-        <p className="text-sm text-amber-800 font-medium">Perubahan izin akan berlaku saat pengguna {selectedRole === 'editor' ? 'Editor' : 'User'} login kembali atau memuat ulang halaman.</p>
+        <p className="text-sm text-amber-800 font-medium">Perubahan izin akan berlaku saat pengguna {selectedRole === 'editor' ? 'Editor' : 'User Biasa'} login kembali atau memuat ulang halaman.</p>
       </div>
 
       <div className="bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden">
@@ -288,8 +294,8 @@ export default function PermissionManager() {
         </div>
       </div>
 
-      {hasChanges && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t border-slate-200 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] p-4 z-50 flex items-center justify-center gap-4 transition-transform animate-fade-in-up">
+      {hasChanges && canUpdatePermissions && (
+        <div className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t border-slate-200 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] p-4 z-50 flex flex-wrap items-center justify-center gap-4 transition-transform animate-fade-in-up">
           <button 
             onClick={handleReset}
             disabled={saving}

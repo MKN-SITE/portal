@@ -12,7 +12,13 @@ interface SliderItem {
 }
 
 export default function HeroSliders() {
+  const { hasPermission } = useAuth();
+  const canCreate = hasPermission('sliders', 'create');
+  const canUpdate = hasPermission('sliders', 'update');
+  const canDelete = hasPermission('sliders', 'delete');
+
   const [sliders, setSliders] = useState<SliderItem[]>([]);
+  const [initialSliders, setInitialSliders] = useState<SliderItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
@@ -32,6 +38,7 @@ export default function HeroSliders() {
       
       if (error) throw error;
       setSliders(data || []);
+      setInitialSliders(JSON.parse(JSON.stringify(data || [])));
       setIsDirty(false);
     } catch (err: any) {
       toast.error('Gagal memuat data slider');
@@ -41,6 +48,10 @@ export default function HeroSliders() {
   };
 
   const handleFileUpload = async (files: FileList | File[]) => {
+    if (!canCreate) {
+      toast.error('Anda tidak memiliki izin untuk menambah slider');
+      return;
+    }
     const uploadToast = toast.loading(`Mengunggah ${files.length} gambar...`);
     const newSliders = [...sliders];
     let uploadCount = 0;
@@ -62,7 +73,7 @@ export default function HeroSliders() {
           .getPublicUrl(`sliders/${fileName}`);
         
         newSliders.push({
-          id: `new_${Date.now()}_${i}`, // temporary id
+          id: `new_${Date.now()}_${i}`,
           image_url: publicUrl,
           display_order: newSliders.length
         });
@@ -82,24 +93,24 @@ export default function HeroSliders() {
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
+    if (!canCreate) return;
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       handleFileUpload(e.dataTransfer.files);
     }
   };
 
   const moveSlider = (index: number, direction: 'up' | 'down') => {
+    if (!canUpdate) return;
     if (direction === 'up' && index === 0) return;
     if (direction === 'down' && index === sliders.length - 1) return;
 
     const newSliders = [...sliders];
     const targetIndex = direction === 'up' ? index - 1 : index + 1;
     
-    // Swap
     const temp = newSliders[index];
     newSliders[index] = newSliders[targetIndex];
     newSliders[targetIndex] = temp;
 
-    // Update display_order
     newSliders.forEach((s, i) => s.display_order = i);
 
     setSliders(newSliders);
@@ -107,6 +118,10 @@ export default function HeroSliders() {
   };
 
   const removeSlider = (index: number) => {
+    if (!canDelete && !sliders[index].id.startsWith('new_')) {
+      toast.error('Anda tidak memiliki izin untuk menghapus slider');
+      return;
+    }
     const newSliders = sliders.filter((_, i) => i !== index);
     newSliders.forEach((s, i) => s.display_order = i);
     setSliders(newSliders);
@@ -115,33 +130,61 @@ export default function HeroSliders() {
 
   const handleSave = async () => {
     setSaving(true);
-    const saveToast = toast.loading('Menyimpan urutan slider...');
+    const saveToast = toast.loading('Menyimpan perubahan slider...');
     try {
-      // 1. Delete all existing
-      const { error: deleteError } = await supabase
-        .from('hero_sliders')
-        .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000'); // hack to delete all
+      // 1. Identify deleted existing rows
+      const currentIds = new Set(sliders.filter(s => !s.id.startsWith('new_')).map(s => s.id));
+      const removedIds = initialSliders.filter(s => !currentIds.has(s.id)).map(s => s.id);
 
-      if (deleteError) throw deleteError;
+      if (removedIds.length > 0) {
+        const { error: deleteError } = await supabase
+          .from('hero_sliders')
+          .delete()
+          .in('id', removedIds);
+        if (deleteError) throw deleteError;
+      }
 
-      // 2. Insert new ones
-      if (sliders.length > 0) {
-        const insertData = sliders.map((s, i) => ({
-          image_url: s.image_url,
-          display_order: i
-        }));
-        
+      // 2. Update existing rows' display_order
+      const existingToUpdate = sliders
+        .map((s, idx) => ({ ...s, display_order: idx }))
+        .filter(s => !s.id.startsWith('new_'));
+
+      for (const item of existingToUpdate) {
+        const { error: updateError } = await supabase
+          .from('hero_sliders')
+          .update({ display_order: item.display_order })
+          .eq('id', item.id);
+        if (updateError) throw updateError;
+      }
+
+      // 3. Insert newly uploaded sliders
+      const newToInsert = sliders
+        .map((s, idx) => ({ image_url: s.image_url, display_order: idx, isNew: s.id.startsWith('new_') }))
+        .filter(s => s.isNew)
+        .map(({ image_url, display_order }) => ({ image_url, display_order }));
+
+      if (newToInsert.length > 0) {
         const { error: insertError } = await supabase
           .from('hero_sliders')
-          .insert(insertData);
-          
+          .insert(newToInsert);
         if (insertError) throw insertError;
+      }
+
+      // 4. Log activity
+      const { data: userData } = await supabase.auth.getUser();
+      if (userData.user) {
+        await supabase.from('activity_logs').insert({
+          user_id: userData.user.id,
+          action: 'memperbarui',
+          target: 'Slider Beranda',
+          details: `Total ${sliders.length} gambar slider aktif`,
+          type: 'success'
+        });
       }
 
       toast.success('Slider berhasil disimpan!', { id: saveToast });
       setIsDirty(false);
-      fetchSliders(); // refetch to get real IDs
+      fetchSliders();
     } catch (err: any) {
       toast.error('Gagal menyimpan slider: ' + err.message, { id: saveToast });
     } finally {
@@ -159,46 +202,48 @@ export default function HeroSliders() {
         title="Slider Beranda" 
         subtitle="Kelola gambar latar belakang slider di Halaman Utama"
         action={
-          <>
-            {isDirty && (
-              <div className="flex items-center gap-1.5 bg-amber-50 text-amber-700 px-3 py-2 rounded-lg text-xs font-bold border border-amber-200 mr-2">
-                <WarningCircle className="w-4 h-4" weight="fill" />
-                Perubahan belum disimpan
-              </div>
-            )}
-            <button 
-              onClick={() => {
-                fetchSliders();
-                setIsDirty(false);
-              }}
-              disabled={!isDirty || saving}
-              className={`px-5 py-2.5 rounded-xl font-semibold text-sm transition-all ${
-                isDirty && !saving
-                  ? 'text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 shadow-sm'
-                  : 'text-slate-400 bg-transparent border border-transparent'
-              }`}
-            >
-              Batalkan
-            </button>
-            <button 
-              onClick={handleSave}
-              disabled={!isDirty || saving}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all shadow-sm ${
-                isDirty && !saving
-                  ? 'bg-slate-900 text-white hover:bg-slate-800 hover:shadow-md hover:-translate-y-0.5' 
-                  : 'bg-slate-400 text-white/90 cursor-not-allowed'
-              }`}
-            >
-              {saving ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Menyimpan...
-                </>
-              ) : (
-                'Simpan Perubahan'
+          (canCreate || canUpdate || canDelete) ? (
+            <>
+              {isDirty && (
+                <div className="flex items-center gap-1.5 bg-amber-50 text-amber-700 px-3 py-2 rounded-lg text-xs font-bold border border-amber-200 mr-2">
+                  <WarningCircle className="w-4 h-4" weight="fill" />
+                  Perubahan belum disimpan
+                </div>
               )}
-            </button>
-          </>
+              <button 
+                onClick={() => {
+                  setSliders(JSON.parse(JSON.stringify(initialSliders)));
+                  setIsDirty(false);
+                }}
+                disabled={!isDirty || saving}
+                className={`px-5 py-2.5 rounded-xl font-semibold text-sm transition-all ${
+                  isDirty && !saving
+                    ? 'text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 shadow-sm'
+                    : 'text-slate-400 bg-transparent border border-transparent'
+                }`}
+              >
+                Batalkan
+              </button>
+              <button 
+                onClick={handleSave}
+                disabled={!isDirty || saving}
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all shadow-sm ${
+                  isDirty && !saving
+                    ? 'bg-slate-900 text-white hover:bg-slate-800 hover:shadow-md hover:-translate-y-0.5' 
+                    : 'bg-slate-400 text-white/90 cursor-not-allowed'
+                }`}
+              >
+                {saving ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Menyimpan...
+                  </>
+                ) : (
+                  'Simpan Perubahan'
+                )}
+              </button>
+            </>
+          ) : undefined
         }
       />
 
@@ -209,35 +254,37 @@ export default function HeroSliders() {
         </div>
 
         {/* Upload Zone */}
-        <div 
-          onClick={() => fileInputRef.current?.click()}
-          onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-          onDragLeave={() => setIsDragging(false)}
-          onDrop={handleDrop}
-          className={`relative w-full h-40 mb-8 rounded-xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-all group overflow-hidden ${isDragging ? 'border-blue-500 bg-blue-50' : 'border-slate-300 bg-slate-50 hover:bg-slate-100'}`}
-        >
-          <input 
-            type="file" 
-            ref={fileInputRef} 
-            className="hidden" 
-            accept="image/*"
-            multiple
-            onChange={(e) => {
-              if (e.target.files && e.target.files.length > 0) {
-                handleFileUpload(e.target.files);
-              }
-            }}
-          />
-          <div className="flex flex-col items-center text-slate-500 gap-3">
-            <div className="w-12 h-12 rounded-full bg-white shadow-sm flex items-center justify-center group-hover:scale-110 transition-transform">
-              <UploadSimple size={24} className="text-blue-500" weight="bold" />
-            </div>
-            <div className="text-center">
-              <p className="text-sm font-bold text-slate-700 mb-1">Klik atau seret file ke sini</p>
-              <p className="text-[11px] font-medium text-slate-400">Mendukung upload banyak file sekaligus (JPG/PNG)</p>
+        {canCreate && (
+          <div 
+            onClick={() => fileInputRef.current?.click()}
+            onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+            onDragLeave={() => setIsDragging(false)}
+            onDrop={handleDrop}
+            className={`relative w-full h-40 mb-8 rounded-xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-all group overflow-hidden ${isDragging ? 'border-blue-500 bg-blue-50' : 'border-slate-300 bg-slate-50 hover:bg-slate-100'}`}
+          >
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              className="hidden" 
+              accept="image/*"
+              multiple
+              onChange={(e) => {
+                if (e.target.files && e.target.files.length > 0) {
+                  handleFileUpload(e.target.files);
+                }
+              }}
+            />
+            <div className="flex flex-col items-center text-slate-500 gap-3">
+              <div className="w-12 h-12 rounded-full bg-white shadow-sm flex items-center justify-center group-hover:scale-110 transition-transform">
+                <UploadSimple size={24} className="text-blue-500" weight="bold" />
+              </div>
+              <div className="text-center">
+                <p className="text-sm font-bold text-slate-700 mb-1">Klik atau seret file ke sini</p>
+                <p className="text-[11px] font-medium text-slate-400">Mendukung upload banyak file sekaligus (JPG/PNG)</p>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Sliders List */}
         <div className="space-y-4">
@@ -266,30 +313,38 @@ export default function HeroSliders() {
 
                 {/* Actions */}
                 <div className="flex items-center gap-2 w-full md:w-auto justify-center">
-                  <button 
-                    onClick={() => moveSlider(index, 'up')}
-                    disabled={index === 0}
-                    className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg disabled:opacity-30 transition-colors"
-                    title="Naikkan urutan"
-                  >
-                    <ArrowUp size={20} weight="bold" />
-                  </button>
-                  <button 
-                    onClick={() => moveSlider(index, 'down')}
-                    disabled={index === sliders.length - 1}
-                    className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg disabled:opacity-30 transition-colors"
-                    title="Turunkan urutan"
-                  >
-                    <ArrowDown size={20} weight="bold" />
-                  </button>
-                  <div className="w-[1px] h-6 bg-slate-200 mx-1"></div>
-                  <button 
-                    onClick={() => removeSlider(index)}
-                    className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                    title="Hapus gambar"
-                  >
-                    <Trash size={20} weight="bold" />
-                  </button>
+                  {canUpdate && (
+                    <>
+                      <button 
+                        onClick={() => moveSlider(index, 'up')}
+                        disabled={index === 0}
+                        className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg disabled:opacity-30 transition-colors"
+                        title="Naikkan urutan"
+                      >
+                        <ArrowUp size={20} weight="bold" />
+                      </button>
+                      <button 
+                        onClick={() => moveSlider(index, 'down')}
+                        disabled={index === sliders.length - 1}
+                        className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg disabled:opacity-30 transition-colors"
+                        title="Turunkan urutan"
+                      >
+                        <ArrowDown size={20} weight="bold" />
+                      </button>
+                    </>
+                  )}
+                  {(canDelete || slider.id.startsWith('new_')) && (
+                    <>
+                      <div className="w-[1px] h-6 bg-slate-200 mx-1"></div>
+                      <button 
+                        onClick={() => removeSlider(index)}
+                        className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Hapus gambar"
+                      >
+                        <Trash size={20} weight="bold" />
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             ))

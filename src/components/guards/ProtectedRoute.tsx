@@ -1,6 +1,7 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { PAGE_DEFINITIONS } from '../../config/permissions';
 import toast from 'react-hot-toast';
 
 interface ProtectedRouteProps {
@@ -28,16 +29,22 @@ export function ProtectedRoute({ children, pageKey }: ProtectedRouteProps) {
     return <Navigate to="/admin/login" state={{ from: location }} replace />;
   }
 
-  // No admin/editor role at all
-  if (!userRole || (userRole !== 'admin' && userRole !== 'editor')) {
+  // No valid dashboard role at all
+  if (!userRole || !['admin', 'editor', 'user'].includes(userRole)) {
     toast.error('Anda tidak memiliki akses ke halaman admin');
     return <Navigate to="/" replace />;
   }
 
-  // Check page-level permission (admin always passes, editor checks DB permissions)
+  // Check page-level permission
   if (pageKey && !canAccessPage(pageKey)) {
-    toast.error('Anda tidak memiliki izin untuk mengakses halaman ini');
-    return <Navigate to="/admin" replace />;
+    // Find first accessible fallback page to avoid infinite redirect loop if 'dashboard' is disabled
+    const fallbackPage = PAGE_DEFINITIONS.find(p => canAccessPage(p.key));
+    const fallbackPath = fallbackPage ? fallbackPage.path : '/admin/profile';
+
+    if (location.pathname !== fallbackPath) {
+      toast.error('Anda tidak memiliki izin untuk mengakses halaman ini');
+      return <Navigate to={fallbackPath} replace />;
+    }
   }
 
   return <>{children}</>;

@@ -407,7 +407,7 @@ CREATE FUNCTION public.has_admin_or_editor_role() RETURNS boolean
 BEGIN
     RETURN EXISTS (
         SELECT 1 FROM public.user_roles
-        WHERE user_id = auth.uid() AND role IN ('admin', 'editor')
+        WHERE user_id = auth.uid() AND role IN ('admin', 'editor', 'user')
     );
 END;
 $$;
@@ -479,7 +479,7 @@ CREATE FUNCTION public.increment_visitor_count() RETURNS void
     AS $$
 BEGIN
     -- Increment site_settings overall counter
-    UPDATE public.site_settings SET stats_visitors = stats_visitors + 1 WHERE id = 1;
+    UPDATE public.site_settings SET stats_visitors = COALESCE(stats_visitors, 0) + 1 WHERE id = 1;
     
     -- Increment daily visitors
     INSERT INTO public.daily_visitors (date, count)
@@ -587,11 +587,13 @@ CREATE VIEW public.activity_logs_with_users AS
     a.user_id,
     a.action,
     a.target,
+    a.details,
     a.type,
     a.created_at,
     au.email AS user_email
    FROM (public.activity_logs a
-     LEFT JOIN auth.users au ON ((a.user_id = au.id)));
+     LEFT JOIN auth.users au ON ((a.user_id = au.id)))
+  WHERE (public.has_permission('activity'::text, 'view'::text) OR public.is_admin());
 
 
 ALTER VIEW public.activity_logs_with_users OWNER TO postgres;
@@ -605,7 +607,8 @@ CREATE VIEW public.admin_user_profiles AS
     email,
     created_at,
     last_sign_in_at
-   FROM auth.users;
+   FROM auth.users
+  WHERE (public.has_permission('users'::text, 'view'::text) OR public.is_admin());
 
 
 ALTER VIEW public.admin_user_profiles OWNER TO postgres;
@@ -743,6 +746,7 @@ CREATE TABLE public.site_settings (
     tiktok_url text,
     logo_url text,
     favicon_url text,
+    stats_visitors integer DEFAULT 0,
     CONSTRAINT site_settings_single_row CHECK ((id = 1))
 );
 
@@ -873,7 +877,7 @@ INSERT INTO public.role_permissions VALUES ('567e3b72-b765-4402-b51a-ca7ac9c2f61
 
 INSERT INTO public.site_settings VALUES (1, 'MKN Portal ', 'Sinergi Terintegrasi', 'Satu portal untuk semua sistem. Pilih layanan yang ingin Anda akses.', NULL, 'contact@mkncorp.com', '2026-08-21 01:32:03.431243+00', 'Pusat Layanan & Aplikasi 
 Terintegrasi ', 'Seluruh sistem operasional dan layanan manajemen perusahaan kini berada dalam satu genggaman untuk mendukung produktivitas kerja harian Anda.', 'https://api-db.mknsite.online/storage/v1/object/public/portal_assets/hero/explore_0.4790865459782291.png', 'https://api-db.mknsite.online/storage/v1/object/public/portal_assets/hero/stats_bg_0.4189328328365368.png', 'PT. Multi Kontrol Nusantara', 'www.mkncorp.com', '0549-2026162', 'KPC Communication Building
-Tango Delta D8, Sangatta', NULL, NULL, 'https://id.linkedin.com/company/mkncorp', 'https://www.instagram.com/multikontrolnusantara/', NULL, 'https://api-db.mknsite.online/storage/v1/object/public/portal_assets/brand/logo_url_0.03130436299706607.png', NULL);
+Tango Delta D8, Sangatta', NULL, NULL, 'https://id.linkedin.com/company/mkncorp', 'https://www.instagram.com/multikontrolnusantara/', NULL, 'https://api-db.mknsite.online/storage/v1/object/public/portal_assets/brand/logo_url_0.03130436299706607.png', NULL, 0);
 
 
 --
@@ -1182,14 +1186,14 @@ CREATE POLICY "Only admins can manage role_permissions" ON public.role_permissio
 -- Name: daily_visitors Public can insert daily_visitors; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "Public can insert daily_visitors" ON public.daily_visitors FOR INSERT WITH CHECK (true);
+-- Removed insecure policy: CREATE POLICY "Public can insert daily_visitors" ON public.daily_visitors FOR INSERT WITH CHECK (true);
 
 
 --
 -- Name: portal_clicks Public can insert portal_clicks; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "Public can insert portal_clicks" ON public.portal_clicks FOR INSERT WITH CHECK (true);
+-- Removed insecure policy: CREATE POLICY "Public can insert portal_clicks" ON public.portal_clicks FOR INSERT WITH CHECK (true);
 
 
 --
@@ -1245,14 +1249,14 @@ CREATE POLICY "Public can read site_settings" ON public.site_settings FOR SELECT
 -- Name: daily_visitors Public can update daily_visitors; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "Public can update daily_visitors" ON public.daily_visitors FOR UPDATE USING (true);
+-- Removed insecure policy: CREATE POLICY "Public can update daily_visitors" ON public.daily_visitors FOR UPDATE USING (true);
 
 
 --
 -- Name: portal_clicks Public can update portal_clicks; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "Public can update portal_clicks" ON public.portal_clicks FOR UPDATE USING (true);
+-- Removed insecure policy: CREATE POLICY "Public can update portal_clicks" ON public.portal_clicks FOR UPDATE USING (true);
 
 
 --
@@ -1356,9 +1360,15 @@ GRANT ALL ON FUNCTION public.delete_admin_user(p_user_id uuid) TO authenticated;
 -- =============================================
 -- Grant Permissions
 -- =============================================
-GRANT ALL ON ALL TABLES IN SCHEMA public TO postgres, anon, authenticated, service_role;
-GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO postgres, anon, authenticated, service_role;
-GRANT ALL ON ALL FUNCTIONS IN SCHEMA public TO postgres, anon, authenticated, service_role;
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO postgres, authenticated, service_role;
+REVOKE ALL ON public.admin_user_profiles FROM anon, public;
+REVOKE ALL ON public.activity_logs_with_users FROM anon, public;
+GRANT SELECT ON public.admin_user_profiles TO authenticated, service_role;
+GRANT SELECT ON public.activity_logs_with_users TO authenticated, service_role;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO postgres, anon, authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.increment_visitor_count() TO anon, authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.increment_portal_click(uuid) TO anon, authenticated, service_role;
 
 
 --

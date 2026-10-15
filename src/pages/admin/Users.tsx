@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { supabase } from '../../lib/supabase';
-import { ShieldCheck, Plus, Trash, PencilSimple, Key, UserPlus } from '@phosphor-icons/react';
+import { useAuth } from '../../contexts/AuthContext';
+import { ShieldCheck, Trash, PencilSimple, Key, UserPlus } from '@phosphor-icons/react';
 import toast from 'react-hot-toast';
 import { AdminHeader } from '../../components/ui/AdminHeader';
 import { Input } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
 
 export default function Users() {
+  const { hasPermission } = useAuth();
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [sessionUser, setSessionUser] = useState<any>(null);
@@ -24,6 +26,19 @@ export default function Users() {
       setSessionUser(data.session?.user);
     });
   }, []);
+
+  const logActivity = async (action: string, target: string, type: 'info' | 'success' | 'warning' | 'error' = 'info', details?: string) => {
+    const { data: userData } = await supabase.auth.getUser();
+    if (userData.user) {
+      await supabase.from('activity_logs').insert({
+        user_id: userData.user.id,
+        action,
+        target,
+        details,
+        type,
+      });
+    }
+  };
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -43,24 +58,21 @@ export default function Users() {
 
     try {
       if (isEditMode) {
-        // Edit mode: only update role (and optionally password)
         if (formData.password && formData.password.length >= 6) {
-          // Update password via RPC
           const { error: pwError } = await supabase.rpc('admin_update_password', {
             p_email: formData.email,
             p_password: formData.password
           });
           if (pwError) throw pwError;
         }
-        // Update role
         const { error: roleError } = await supabase.rpc('assign_user_role', {
           p_email: formData.email,
           p_role: formData.role
         });
         if (roleError) throw roleError;
+        await logActivity('memperbarui', `Pengguna ${formData.email}`, 'info', `Peran diatur ke ${formData.role}`);
         toast.success(`Berhasil memperbarui peran ${formData.email}`);
       } else {
-        // Create mode: use create_or_assign_admin RPC for instant verified user creation
         if (!formData.password || formData.password.length < 6) {
           toast.error('Password harus minimal 6 karakter');
           setIsSubmitting(false);
@@ -74,6 +86,7 @@ export default function Users() {
         });
 
         if (createError) throw createError;
+        await logActivity('menambahkan', `Pengguna ${formData.email}`, 'success', `Peran: ${formData.role}`);
         toast.success(`Berhasil menambahkan pengguna ${formData.email} sebagai ${formData.role}`);
       }
 
@@ -87,7 +100,7 @@ export default function Users() {
     setIsSubmitting(false);
   };
 
-  const handleRemoveRole = async (userId: string) => {
+  const handleRemoveRole = async (userId: string, userEmail?: string) => {
     if (!confirm('Apakah Anda yakin ingin menghapus pengguna ini? Akun akan dihapus permanen.')) return;
     
     const { error } = await supabase.rpc('delete_admin_user', {
@@ -97,6 +110,7 @@ export default function Users() {
     if (error) {
       toast.error(error.message);
     } else {
+      await logActivity('menghapus', `Pengguna ${userEmail || userId}`, 'error');
       toast.success('Pengguna berhasil dihapus');
       fetchUsers();
     }
@@ -117,6 +131,7 @@ export default function Users() {
           p_password: newPassword
         });
         if (error) throw error;
+        await logActivity('mereset password', `Pengguna ${email}`, 'warning');
       })(),
       {
         loading: 'Mereset password...',
@@ -124,6 +139,13 @@ export default function Users() {
         error: (err) => `Gagal mereset password: ${err.message}`
       }
     );
+  };
+
+  const formatRoleBadge = (role: string) => {
+    if (role === 'admin') return 'Super Admin';
+    if (role === 'editor') return 'Editor';
+    if (role === 'user') return 'User Biasa';
+    return role.toUpperCase();
   };
 
   return (
@@ -134,20 +156,22 @@ export default function Users() {
         title="Pengguna Admin" 
         subtitle="Kelola akses dan peran pengguna di dalam sistem portal"
         action={
-          <button 
-            onClick={() => {
-              setFormData({ email: '', password: '', role: 'admin' });
-              setIsEditMode(false);
-              setIsModalOpen(true);
-            }}
-            className="flex items-center gap-2 bg-[#0f172a] hover:bg-slate-800 text-white px-5 py-2.5 rounded-xl font-semibold text-sm transition-colors shadow-sm"
-          >
-            <UserPlus className="w-4 h-4" weight="bold" /> Tambah Pengguna
-          </button>
+          hasPermission('users', 'create') && (
+            <button 
+              onClick={() => {
+                setFormData({ email: '', password: '', role: 'admin' });
+                setIsEditMode(false);
+                setIsModalOpen(true);
+              }}
+              className="flex items-center gap-2 bg-[#0f172a] hover:bg-slate-800 text-white px-5 py-2.5 rounded-xl font-semibold text-sm transition-colors shadow-sm"
+            >
+              <UserPlus className="w-4 h-4" weight="bold" /> Tambah Pengguna
+            </button>
+          )
         }
       />
 
-      <div className="bg-white rounded-[16px] border border-slate-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-[16px] border border-slate-200 shadow-sm overflow-hidden overflow-x-auto">
         {loading ? (
           <div className="p-8 text-center text-slate-500">Memuat...</div>
         ) : (
@@ -179,33 +203,39 @@ export default function Users() {
                   <td className="py-4 px-6">
                       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-slate-100 text-slate-700">
                         <ShieldCheck className="w-3.5 h-3.5" weight="fill" />
-                        {u.role === 'admin' ? 'Super Admin' : u.role === 'editor' ? 'Editor' : u.role.toUpperCase()}
+                        {formatRoleBadge(u.role)}
                       </span>
                   </td>
                   <td className="py-4 px-6 text-sm text-slate-500 font-medium">
                     {new Date(u.created_at).toLocaleDateString('id-ID')}
                   </td>
                   <td className="py-4 px-6 flex items-center justify-end gap-3">
-                    <button 
-                      onClick={() => handleResetPassword(u.email)}
-                      className="text-slate-400 hover:text-blue-600 transition-colors" title="Reset Password"
-                    >
-                      <Key className="w-5 h-5" weight="fill" />
-                    </button>
-                    <button 
-                      onClick={() => {
-                        setFormData({ email: u.email, password: '', role: u.role });
-                        setIsEditMode(true);
-                        setIsModalOpen(true);
-                      }}
-                      className="text-slate-400 hover:text-slate-900 transition-colors" title="Edit">
-                      <PencilSimple className="w-5 h-5" weight="bold" />
-                    </button>
-                    <button 
-                      onClick={() => handleRemoveRole(u.user_id)}
-                      className="text-slate-400 hover:text-red-500 transition-colors" title="Hapus Pengguna">
-                      <Trash className="w-5 h-5" weight="bold" />
-                    </button>
+                    {hasPermission('users', 'update') && (
+                      <>
+                        <button 
+                          onClick={() => handleResetPassword(u.email)}
+                          className="text-slate-400 hover:text-blue-600 transition-colors" title="Reset Password"
+                        >
+                          <Key className="w-5 h-5" weight="fill" />
+                        </button>
+                        <button 
+                          onClick={() => {
+                            setFormData({ email: u.email, password: '', role: u.role });
+                            setIsEditMode(true);
+                            setIsModalOpen(true);
+                          }}
+                          className="text-slate-400 hover:text-slate-900 transition-colors" title="Edit">
+                          <PencilSimple className="w-5 h-5" weight="bold" />
+                        </button>
+                      </>
+                    )}
+                    {hasPermission('users', 'delete') && sessionUser?.id !== u.user_id && (
+                      <button 
+                        onClick={() => handleRemoveRole(u.user_id, u.email)}
+                        className="text-slate-400 hover:text-red-500 transition-colors" title="Hapus Pengguna">
+                        <Trash className="w-5 h-5" weight="bold" />
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -226,7 +256,6 @@ export default function Users() {
             </div>
             
             <form onSubmit={handleAssignRole} className="p-6 space-y-5" autoComplete="off">
-              {/* Fake hidden inputs to stop Chrome autofill */}
               <input type="email" name="fakeusernameremembered" style={{display: 'none'}} />
               <input type="password" name="fakepasswordremembered" style={{display: 'none'}} />
 
@@ -266,7 +295,8 @@ export default function Users() {
                   onChange={(val) => setFormData(prev => ({ ...prev, role: val }))}
                   options={[
                     { value: 'admin', label: 'Super Admin (Akses Penuh)' },
-                    { value: 'editor', label: 'Editor (Hanya kelola portal)' },
+                    { value: 'editor', label: 'Editor (Kelola Portal & Konten)' },
+                    { value: 'user', label: 'User Biasa (Sesuai Pengaturan Izin)' },
                   ]}
                   placeholder="Pilih Peran..."
                 />

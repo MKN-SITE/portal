@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { ArrowUpRight, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { 
   CaretLeft, CaretRight, SquaresFour, Gear, CarProfile, Buildings, ShieldCheck, 
   FileText, BookOpen, Users as UsersIcon, Lightning, Globe, Wrench, ChartBar, 
@@ -9,12 +9,36 @@ import { MarqueeItem } from '../data/portalData';
 import workerImage from '../assets/images/real_worker2.png';
 import { supabase } from '../lib/supabase';
 import { optimizeImage } from '../lib/imageUtils';
+
 const getCategoryIcon = (iconName?: string) => {
   const icons: Record<string, any> = {
     Gear, CarProfile, Buildings, ShieldCheck, FileText, BookOpen, 
     UsersIcon, Lightning, Globe, Wrench, ChartBar, Briefcase, Heart
   };
   return iconName && icons[iconName] ? icons[iconName] : null;
+};
+
+// Safe JSX formatter to replace dangerouslySetInnerHTML (supports newlines and *highlighted* text)
+const renderFormattedTitle = (rawText: string) => {
+  const lines = rawText.split('\n');
+  return lines.map((line, lineIdx) => {
+    const parts = line.split(/(\*[^*]+\*)/g);
+    return (
+      <React.Fragment key={lineIdx}>
+        {parts.map((part, partIdx) => {
+          if (part.startsWith('*') && part.endsWith('*') && part.length > 2) {
+            return (
+              <span key={partIdx} className="text-[#E85D44]">
+                {part.slice(1, -1)}
+              </span>
+            );
+          }
+          return <React.Fragment key={partIdx}>{part}</React.Fragment>;
+        })}
+        {lineIdx < lines.length - 1 && <br />}
+      </React.Fragment>
+    );
+  });
 };
 
 export const PortalsShowcaseSection: React.FC<{ onClose?: () => void, isClosing?: boolean }> = ({ onClose, isClosing }) => {
@@ -65,10 +89,10 @@ export const PortalsShowcaseSection: React.FC<{ onClose?: () => void, isClosing?
 
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth >= 1280) setItemsPerPage(6); // xl screens: 3 cols x 2 rows
-      else if (window.innerWidth >= 1024) setItemsPerPage(4); // lg screens: 2 cols x 2 rows
-      else if (window.innerWidth >= 768) setItemsPerPage(4); // md screens: 2 cols x 2 rows
-      else setItemsPerPage(12); // mobile: 4 cols x 3 rows (icon grid)
+      if (window.innerWidth >= 1280) setItemsPerPage(6);
+      else if (window.innerWidth >= 1024) setItemsPerPage(4);
+      else if (window.innerWidth >= 768) setItemsPerPage(4);
+      else setItemsPerPage(12);
     };
     handleResize();
     window.addEventListener('resize', handleResize);
@@ -77,23 +101,24 @@ export const PortalsShowcaseSection: React.FC<{ onClose?: () => void, isClosing?
 
   const categories = useMemo(() => {
     const defaultCat = { name: 'Semua', icon: 'SquaresFour' };
+    const portalCategorySet = new Set(portals.map(p => p.category).filter(Boolean));
     if (dbCategories.length > 0) {
-      return [defaultCat, ...dbCategories];
+      // Only show categories that have at least 1 portal (matching admin info banner)
+      const activeWithPortals = dbCategories.filter(c => portalCategorySet.has(c.name));
+      return [defaultCat, ...(activeWithPortals.length > 0 ? activeWithPortals : dbCategories)];
     }
-    const uniqueCategories = new Set(portals.map(p => p.category).filter(Boolean));
-    return [defaultCat, ...Array.from(uniqueCategories).map(name => ({ name, icon: 'Gear' }))];
+    return [defaultCat, ...Array.from(portalCategorySet).map(name => ({ name, icon: 'Gear' }))];
   }, [dbCategories, portals]);
 
   const filteredPortals = useMemo(() => {
     if (activeCategory === 'Semua') return portals;
-    return portals.filter(portal => portal.category.includes(activeCategory));
+    return portals.filter(portal => portal.category === activeCategory || portal.category.includes(activeCategory));
   }, [portals, activeCategory]);
 
   const totalPages = Math.ceil(filteredPortals.length / itemsPerPage);
 
   useEffect(() => {
     setCurrentPage(0);
-    // Reset scroll position when category changes
     if (showcaseScrollRef.current) {
       showcaseScrollRef.current.scrollTo({ left: 0 });
     }
@@ -136,7 +161,7 @@ export const PortalsShowcaseSection: React.FC<{ onClose?: () => void, isClosing?
         {/* Background Layer */}
         <div className="absolute inset-0 bg-gradient-to-b from-white via-rose-50 to-[#E85D44] pointer-events-none"></div>
 
-         {/* Scrollable Content Layer */}
+        {/* Scrollable Content Layer */}
         <div className="absolute inset-0 overflow-y-auto overflow-x-hidden">
           <div className="min-h-screen w-full flex flex-col justify-start md:justify-center py-8 md:py-24 px-4 sm:px-6 lg:px-12 relative z-10">
       
@@ -144,7 +169,8 @@ export const PortalsShowcaseSection: React.FC<{ onClose?: () => void, isClosing?
             {onClose && (
               <button 
                 onClick={onClose}
-                className="fixed right-4 top-4 md:right-10 md:top-10 p-2.5 md:p-3 text-slate-400 hover:text-[#0B1B3D] bg-white/50 hover:bg-white rounded-full transition-all z-50 backdrop-blur-md border border-slate-200 hover:border-slate-300 shadow-sm hover:shadow-md group"
+                className="fixed right-4 top-4 md:right-10 md:top-10 p-2.5 md:p-3 text-slate-400 hover:text-[#0B1B3D] bg-white/50 hover:bg-white rounded-full transition-all z-50 backdrop-blur-md border border-slate-200 hover:border-slate-300 shadow-sm hover:shadow-md group cursor-pointer"
+                aria-label="Tutup Eksplorasi Portal"
               >
                 <X className="w-5 h-5 md:w-7 md:h-7 group-hover:rotate-90 transition-transform duration-300" />
               </button>
@@ -153,7 +179,8 @@ export const PortalsShowcaseSection: React.FC<{ onClose?: () => void, isClosing?
             {/* MOBILE ONLY: Text Header appears top */}
             <div className="w-full lg:hidden text-center mb-4 pt-2">
               {siteSettings.explore_title && (
-                <h2 className="text-2xl md:text-5xl font-black text-[#0B1B3D] tracking-tight mb-2 leading-[1.15]" dangerouslySetInnerHTML={{ __html: siteSettings.explore_title.replace(/\n/g, '<br/>').replace(/\*(.*?)\*/g, '<span class="text-[#E85D44]">$1</span>') }}>
+                <h2 className="text-2xl md:text-5xl font-black text-[#0B1B3D] tracking-tight mb-2 leading-[1.15]">
+                  {renderFormattedTitle(siteSettings.explore_title)}
                 </h2>
               )}
               {siteSettings.explore_subtitle && (
@@ -168,7 +195,6 @@ export const PortalsShowcaseSection: React.FC<{ onClose?: () => void, isClosing?
               {/* Left Column: Character Image */}
               <div className="w-full lg:w-2/5 xl:w-[45%] flex justify-center lg:justify-center relative">
                  <div className="w-full max-w-[280px] sm:max-w-[300px] md:max-w-[450px] lg:max-w-[550px] xl:max-w-[650px] aspect-square relative group z-10">
-                   {/* Main Image Container */}
                    <div className="relative w-full h-full flex items-center justify-center drop-shadow-[0_20px_50px_rgba(232,93,68,0.25)] transition-all duration-500">
                      <img src={siteSettings.explore_image_url || workerImage} alt="Karakter Ekosistem MKN" className="w-full h-full object-contain transition-transform duration-700 group-hover:scale-[1.03] group-hover:drop-shadow-[0_20px_40px_rgba(232,93,68,0.4)]" />
                    </div>
@@ -179,9 +205,10 @@ export const PortalsShowcaseSection: React.FC<{ onClose?: () => void, isClosing?
               <div className="w-full lg:w-3/5 xl:w-[55%] flex flex-col relative mt-2 lg:mt-0">
 
                  {/* DESKTOP ONLY: Text Header */}
-                  <div className="hidden lg:block text-left mb-8 xl:mb-10">
+                 <div className="hidden lg:block text-left mb-8 xl:mb-10">
                    {siteSettings.explore_title && (
-                     <h2 className="text-4xl md:text-5xl lg:text-[2.75rem] xl:text-[3.25rem] font-black text-[#0B1B3D] tracking-tight mb-4 leading-[1.15]" dangerouslySetInnerHTML={{ __html: siteSettings.explore_title.replace(/\n/g, '<br/>').replace(/\*(.*?)\*/g, '<span class="text-[#E85D44]">$1</span>') }}>
+                     <h2 className="text-4xl md:text-5xl lg:text-[2.75rem] xl:text-[3.25rem] font-black text-[#0B1B3D] tracking-tight mb-4 leading-[1.15]">
+                       {renderFormattedTitle(siteSettings.explore_title)}
                      </h2>
                    )}
                    {siteSettings.explore_subtitle && (
@@ -202,7 +229,7 @@ export const PortalsShowcaseSection: React.FC<{ onClose?: () => void, isClosing?
                           <button
                             key={cat.name}
                             onClick={() => setActiveCategory(cat.name)}
-                            className={`flex items-center gap-2 px-4 py-2.5 md:px-5 md:py-3 rounded-full text-sm font-semibold whitespace-nowrap transition-all duration-300 ${
+                            className={`flex items-center gap-2 px-4 py-2.5 md:px-5 md:py-3 rounded-full text-sm font-semibold whitespace-nowrap transition-all duration-300 cursor-pointer ${
                               isActive 
                                 ? 'bg-[#0B1B3D] text-white' 
                                 : 'bg-white text-[#0B1B3D] hover:bg-slate-50'
@@ -217,7 +244,6 @@ export const PortalsShowcaseSection: React.FC<{ onClose?: () => void, isClosing?
                  </div>
                  
                  {/* Slider Layout */}
-                 {/* Swipeable scroll-snap slider */}
                  <div className="w-full">
                    <div className="flex items-center gap-3 w-full group/slider">
                     {/* Left Arrow - hidden on mobile */}
@@ -226,7 +252,7 @@ export const PortalsShowcaseSection: React.FC<{ onClose?: () => void, isClosing?
                         <button 
                           onClick={prevPage}
                           disabled={currentPage === 0}
-                          className="w-11 h-11 bg-white/30 hover:bg-white/40 disabled:opacity-0 disabled:pointer-events-none flex items-center justify-center rounded-full transition-all"
+                          className="w-11 h-11 bg-white/30 hover:bg-white/40 disabled:opacity-0 disabled:pointer-events-none flex items-center justify-center rounded-full transition-all cursor-pointer"
                         >
                           <CaretLeft className="w-5 h-5 text-white" weight="bold" />
                         </button>
@@ -251,11 +277,10 @@ export const PortalsShowcaseSection: React.FC<{ onClose?: () => void, isClosing?
                     >
                       {Array.from({ length: totalPages || 1 }).map((_, pageIndex) => (
                         <div key={pageIndex} className="w-full shrink-0 snap-start snap-always">
-                          {/* Mobile: 4-col icon grid | Tablet: 2-col | Desktop: 3-col */}
                           <div className="grid grid-cols-4 sm:grid-cols-2 xl:grid-cols-3 gap-2 sm:gap-4 lg:gap-5 w-full">
                             {filteredPortals.length > 0 ? (
                               filteredPortals.slice(pageIndex * itemsPerPage, (pageIndex + 1) * itemsPerPage).map((portal, idx) => {
-                                let displayTitle = portal.title.replace(' Portal', '');
+                                const displayTitle = portal.title.replace(' Portal', '');
                                 return (
                                   <a 
                                     key={`${portal.id}-${idx}`} 
@@ -304,7 +329,7 @@ export const PortalsShowcaseSection: React.FC<{ onClose?: () => void, isClosing?
                         <button 
                           onClick={nextPage}
                           disabled={currentPage === totalPages - 1}
-                          className="w-11 h-11 bg-white/30 hover:bg-white/40 disabled:opacity-0 disabled:pointer-events-none flex items-center justify-center rounded-full transition-all"
+                          className="w-11 h-11 bg-white/30 hover:bg-white/40 disabled:opacity-0 disabled:pointer-events-none flex items-center justify-center rounded-full transition-all cursor-pointer"
                         >
                           <CaretRight className="w-5 h-5 text-white" weight="bold" />
                         </button>
@@ -324,12 +349,12 @@ export const PortalsShowcaseSection: React.FC<{ onClose?: () => void, isClosing?
                               showcaseScrollRef.current.scrollTo({ left: idx * showcaseScrollRef.current.clientWidth, behavior: 'smooth' });
                             }
                           }}
-                          className={`h-2 rounded-full transition-all duration-300 ${
+                          className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
                             currentPage === idx 
                               ? 'w-6 bg-white shadow-sm' 
                               : 'w-2 bg-white/40 hover:bg-white/60'
                           }`}
-                          aria-label={`Go to page ${idx + 1}`}
+                          aria-label={`Halaman ${idx + 1}`}
                         />
                       ))}
                     </div>

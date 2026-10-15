@@ -1,5 +1,5 @@
-import React, { useState, Suspense, lazy } from 'react';
-import { HeroSection } from '../components/HeroSection'; // above fold — eager
+import React, { useState, Suspense, lazy, useEffect } from 'react';
+import { HeroSection } from '../components/HeroSection';
 import { PortalSite } from '../types';
 import { supabase } from '../lib/supabase';
 
@@ -16,7 +16,7 @@ export default function PublicPortal() {
   const [isPortalsExpanded, setIsPortalsExpanded] = useState(false);
   const [isPortalsClosing, setIsPortalsClosing] = useState(false);
 
-  React.useEffect(() => {
+  useEffect(() => {
     // Increment visitor count when public portal mounts (once per session)
     const incrementVisitor = async () => {
       try {
@@ -29,6 +29,42 @@ export default function PublicPortal() {
       }
     };
     incrementVisitor();
+
+    // Sync document title and favicon dynamically from site_settings
+    const applyHeadMetadata = (data: any) => {
+      if (!data) return;
+      const titleParts = [data.portal_name?.trim(), data.company_name?.trim()].filter(Boolean);
+      if (titleParts.length > 0) {
+        document.title = titleParts.join(' — ');
+      }
+      if (data.favicon_url) {
+        let link = document.querySelector("link[rel~='icon']") as HTMLLinkElement | null;
+        if (!link) {
+          link = document.createElement('link');
+          link.rel = 'icon';
+          document.head.appendChild(link);
+        }
+        link.href = data.favicon_url;
+      }
+    };
+
+    supabase
+      .from('site_settings')
+      .select('portal_name, company_name, favicon_url')
+      .eq('id', 1)
+      .maybeSingle()
+      .then(({ data }) => applyHeadMetadata(data));
+
+    const headSub = supabase
+      .channel('public:site_settings_head')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'site_settings' }, (payload) => {
+        applyHeadMetadata(payload.new);
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(headSub);
+    };
   }, []);
 
   const handleNavigate = (sectionId: string) => {
@@ -41,18 +77,12 @@ export default function PublicPortal() {
   const handleExpandPortals = () => {
     setIsPortalsExpanded(true);
     setIsPortalsClosing(false);
-    // Optional: Hide body scroll when modal is open to prevent background scrolling
     document.body.style.overflow = 'hidden';
   };
 
   const handleClosePortals = () => {
-    // Start closing animation
     setIsPortalsClosing(true);
-    
-    // Restore body scroll
     document.body.style.overflow = 'auto';
-    
-    // Wait for animation to finish before unmounting
     setTimeout(() => {
       setIsPortalsExpanded(false);
       setIsPortalsClosing(false);

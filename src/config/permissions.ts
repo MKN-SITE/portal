@@ -58,6 +58,19 @@ export const DEFAULT_EDITOR_PERMISSIONS: RolePermissions = {
   profile:    { can_view: true,  can_create: false, can_update: true,  can_delete: false },
 };
 
+// Default regular user permissions
+export const DEFAULT_USER_PERMISSIONS: RolePermissions = {
+  dashboard:  { can_view: true,  can_create: false, can_update: false, can_delete: false },
+  portals:    { can_view: true,  can_create: false, can_update: false, can_delete: false },
+  categories: { can_view: false, can_create: false, can_update: false, can_delete: false },
+  appearance: { can_view: false, can_create: false, can_update: false, can_delete: false },
+  sliders:    { can_view: false, can_create: false, can_update: false, can_delete: false },
+  users:      { can_view: false, can_create: false, can_update: false, can_delete: false },
+  permissions:{ can_view: false, can_create: false, can_update: false, can_delete: false },
+  activity:   { can_view: false, can_create: false, can_update: false, can_delete: false },
+  profile:    { can_view: true,  can_create: false, can_update: true,  can_delete: false },
+};
+
 // Map route paths to page keys for route guarding
 export const PATH_TO_PAGE: Record<string, PageKey> = Object.fromEntries(
   PAGE_DEFINITIONS.map(p => [p.path, p.key])

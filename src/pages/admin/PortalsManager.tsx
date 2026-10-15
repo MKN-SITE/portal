@@ -28,7 +28,7 @@ const defaultFormData: PortalFormData = {
 };
 
 export default function PortalsManager() {
-  const { userRole, hasPermission } = useAuth();
+  const { hasPermission } = useAuth();
   const [portals, setPortals] = useState<PortalSite[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -46,7 +46,6 @@ export default function PortalsManager() {
     fetchCategoriesFromDB();
   }, []);
 
-  // Reset pagination when filters change
   useEffect(() => {
     setVisibleCount(10);
   }, [searchQuery, selectedCategory]);
@@ -78,12 +77,10 @@ export default function PortalsManager() {
     setLoading(false);
   };
 
-  // Use DB categories for filter tabs; combine with any portal categories not yet in DB
   const portalCategories = portals.map(p => p.category);
   const allCategories = Array.from(new Set([...dbCategories, ...portalCategories]));
   const filterCategories = ['Semua', ...allCategories];
 
-  // Filter portals based on search and category
   const filteredPortals = portals.filter(portal => {
     const matchesSearch = portal.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           (portal.description || '').toLowerCase().includes(searchQuery.toLowerCase());
@@ -138,7 +135,7 @@ export default function PortalsManager() {
   const handleFileUpload = async (file: File) => {
     const loadingToast = toast.loading('Mengunggah ikon...');
     const fileExt = file.name.split('.').pop();
-    const fileName = `customIcon_${Math.random()}.${fileExt}`;
+    const fileName = `customIcon_${Date.now()}.${fileExt}`;
     
     const { error: uploadError } = await supabase.storage
       .from('portal_assets')
@@ -185,7 +182,7 @@ export default function PortalsManager() {
       url: formData.url,
       custom_image: formData.customIcon,
       description: formData.description,
-      client_or_type: 'Client' // Must match DB check constraint: 'Client', 'Personal', or 'Curated'
+      client_or_type: 'Client'
     };
     
     const { data: userData } = await supabase.auth.getUser();
@@ -350,6 +347,15 @@ export default function PortalsManager() {
                     supabase.from('portal_items').update({ sort_order: idx }).eq('id', p.id)
                   )
                 );
+                const { data: userData } = await supabase.auth.getUser();
+                if (userData.user) {
+                  await supabase.from('activity_logs').insert({
+                    user_id: userData.user.id,
+                    action: 'mengurutkan ulang',
+                    target: 'Daftar Portal',
+                    type: 'info'
+                  });
+                }
                 toast.success('Urutan berhasil disimpan', { id: loadingToast });
               } catch (err) {
                 toast.error('Gagal menyimpan urutan', { id: loadingToast });
@@ -440,7 +446,7 @@ export default function PortalsManager() {
             
             <div className="p-6">
               <form id="portal-form" onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">Nama Portal</label>
                     <Input required type="text" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} placeholder="contoh: HRIS System" />
@@ -595,4 +601,3 @@ export default function PortalsManager() {
     </div>
   );
 }
-
